@@ -70,6 +70,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: ingest, issue ledger, blocker graph, G2PR, subsidy, grants, jurisdiction, イシュー, 実装計画, 補助金, 助成金
 - [Tokyo Subsidy Ingest Execution Handoff](wiki/syntheses/tokyo-subsidy-ingest-execution-handoff.md) — approved packet と execution envelope への実行ハンドオフ。
   検索語: ingest, execution packet, execution envelope, handoff, worker, local_only, 実行計画, ハンドオフ
+- [Tokyo Subsidy Ingest Follow-up Persistence Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-persistence-execution-handoff.md) — `G2PR-004` の永続化 contract 実行ハンドオフ。
+  検索語: ingest, persistence, PostgreSQL, MinIO, RawArtifact, migration, G2PR-004, 永続化, 実行計画
 
 ### Sources
 

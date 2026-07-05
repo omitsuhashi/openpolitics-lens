@@ -114,3 +114,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - remote `main` と `codex/ingestpr` を push し、draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) を作成。
 - PR は `main` base、`codex/ingestpr` head、draft/open/mergeable として確認済み。
+
+## [2026-07-05] execution-plan | Draft G2PR-004 persistence packet
+
+- `tokyo-subsidy-ingest-followup-persistence-input-packet.json`, `tokyo-subsidy-ingest-followup-persistence-execution-envelope.json`, `tokyo-subsidy-ingest-followup-persistence-execution-handoff.md` を追加。
+- 初回 PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) の head を土台に、`G2PR-004` を後続 issue の最初の実行対象にした。
+- live PostgreSQL / MinIO 接続ではなく、migration SQL、object storage key contract、fake writer、DB row payload 生成の contract 固定に scope を限定した。
