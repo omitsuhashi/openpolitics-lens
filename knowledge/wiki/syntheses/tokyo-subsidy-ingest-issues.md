@@ -17,8 +17,8 @@ spec: tokyo-subsidy-ingest-spec.md
 
 | Epic ID | ローカルID | タイトル | レビュー状態 | 実行状態 | ブロック元 | ブロック先 | GitHub Issue | 実装レビュー | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-001 | Jurisdiction Profile と ingest contract / filesystem output の土台を作る | 承認済み | 実行可能 | なし | G2PR-002, G2PR-004 | 未作成 | 未実施 | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-002 | 都庁助成・補助金 connector の fixture discovery/fetch を実装する | 承認済み | ブロック中 | G2PR-001 | G2PR-003, G2PR-005, G2PR-006, G2PR-007 | 未作成 | 未実施 | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-001 | Jurisdiction Profile と ingest contract / filesystem output の土台を作る | 承認済み | PR_READY | なし | G2PR-002, G2PR-004 | 未作成 | 承認済み | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-002 | 都庁助成・補助金 connector の fixture discovery/fetch を実装する | 承認済み | 実行可能 | G2PR-001 | G2PR-003, G2PR-005, G2PR-006, G2PR-007 | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-003 | CLI と README を整備し、fixture 検証を通す | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-004 | PostgreSQL / MinIO 永続化を設計・実装する | 承認済み | ブロック中 | G2PR-001 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
@@ -38,6 +38,8 @@ G2PR-001
 ```
 
 cycle はない。Issue Gate 承認後、`G2PR-001` だけが直ちに実行可能で、`G2PR-002` 以降は依存 issue の完了後に実行可能になる。
+
+`G2PR-001` は実装レビュー承認済みで、`G2PR-002` の blocker を解除した。`G2PR-004` 以降は初回 PR の非目標であるため、依存の一部が満たされても後続 scope として `ブロック中` のまま残す。
 
 ## 初回 PR 実装範囲
 
@@ -77,6 +79,15 @@ uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 ```
+
+### 実装結果
+
+- branch: `codex/opl-ingest-subsidy-20260705/G2PR-001-ingest-contract`
+- base: `c968b79c9c5da1cd66b82eb8290ab42bb2a924a4`
+- head: `c539566450bcaf7aab265cd5f4568fcd9c687934`
+- review range: `c968b79c9c5da1cd66b82eb8290ab42bb2a924a4..c539566450bcaf7aab265cd5f4568fcd9c687934`
+- 実装レビュー: 承認済み。初回レビューの Important 指摘に従い、filesystem writer に manifest path construction と JSONL append helper を追加した。
+- verification: `uv run pytest -q` は 6 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
 
 ## G2PR-002: 都庁助成・補助金 connector の fixture discovery/fetch を実装する
 

@@ -91,3 +91,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 ## [2026-07-05] execution-plan | Update execution envelope base
 
 - packet/evidence boundary commit `c968b79c9c5da1cd66b82eb8290ab42bb2a924a4` を `epic_base.sha` として execution envelope revision 3 に更新。
+
+## [2026-07-05] implementation | G2PR-001 ingest contract foundation
+
+- `G2PR-001` の worker 実装を review gate に通し、head `c539566450bcaf7aab265cd5f4568fcd9c687934` を `PR_READY` として記録。
+- 初回レビューで manifest JSONL writer 欠落の Important 指摘があり、`manifest_relative_path()` と `append_jsonl()` を追加して再レビュー承認済み。
+- `G2PR-002` の blocker を解除し、都庁助成・補助金 connector の fixture discovery/fetch 実装へ進める状態に更新。
