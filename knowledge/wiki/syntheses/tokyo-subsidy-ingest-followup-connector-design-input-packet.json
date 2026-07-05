@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/2cb6/openpolitics-lens",
+  "epic_id": "opl-ingest-subsidy-connector-design-20260705",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:1eaa06933809a1a00a3edbcb56d8369b6b3b160a3e8a83db8443f79d0a60076f"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-007",
+      "title": "契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "knowledge/wiki/syntheses に source connector design synthesis を追加する",
+        "契約・入札、予算・決算、監査、政治資金、会議録・議案の source family ごとに jurisdiction_id, jurisdiction_level, source_system, source_family, connector_id を定義する",
+        "既存の tokyo_metro_grants と同じ Jurisdiction Profile 分離規約に沿い、国・自治体横展開時に allowlist, rate_limit_policy, terms_note, fixture, output path が混ざらないことを説明する",
+        "source family ごとに discovery/fetch の入口、retrieval_method、candidate_type、source_type、normalization_target、fixture strategy を記録する",
+        "電子調達検索 UI、政治資金 PDF、会議録検索は live acquisition 条件と fixture strategy を明確に分けて記録する",
+        "G2PR-006 の PDF/OCR feasibility と整合し、未検証事項と後続 implementation issue を明記する"
+      ],
+      "non_goals": [
+        "connector 実装、parser 実装、browser automation、PDF/OCR engine、table extraction 実装は行わない",
+        "live source 取得、外部 network、PDF download、OCR 実行は行わない",
+        "金額、氏名、団体名、監査指摘、交付先、契約先の意味解釈は行わない",
+        "SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal、AuditFinding、BudgetLine、ContractAward、FundingContact、Speech、Bill は生成しない",
+        "DB migration、API、Web UI、GitHub Issue mirror は扱わない"
+      ],
+      "verification": [
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:knowledge/wiki/syntheses"
+      ],
+      "dependencies": []
+    }
+  ],
+  "delivery_intent": "local_only"
+}
