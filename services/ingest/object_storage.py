@@ -7,7 +7,8 @@ from typing import Protocol
 from ingest.filesystem import _normalize_extension, _validate_path_component, content_sha256
 
 RESERVED_METADATA_KEYS = frozenset(
-    {
+    key.casefold()
+    for key in {
         "content_hash",
         "hash_algorithm",
         "jurisdiction_id",
@@ -91,7 +92,9 @@ class ObjectStorageOutputWriter:
             "source_family": source_family,
         }
         if metadata is not None:
-            reserved_collisions = RESERVED_METADATA_KEYS.intersection(metadata)
+            reserved_collisions = [
+                key for key in metadata if key.casefold() in RESERVED_METADATA_KEYS
+            ]
             if reserved_collisions:
                 keys = ", ".join(sorted(reserved_collisions))
                 msg = f"reserved metadata keys cannot be overridden: {keys}"

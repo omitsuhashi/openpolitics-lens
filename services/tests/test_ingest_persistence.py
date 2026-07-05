@@ -103,9 +103,14 @@ def test_object_storage_writer_uses_raw_object_key_contract() -> None:
     "metadata",
     [
         {"content_hash": "b" * 64},
+        {"Content_Hash": "b" * 64},
+        {"CONTENT_HASH": "b" * 64},
         {"hash_algorithm": "md5"},
+        {"Hash_Algorithm": "md5"},
         {"jurisdiction_id": "jp-yokohama"},
+        {"JURISDICTION_ID": "jp-yokohama"},
         {"source_family": "other_family"},
+        {"Source_Family": "other_family"},
     ],
 )
 def test_object_storage_writer_rejects_reserved_metadata_collision(
@@ -126,6 +131,23 @@ def test_object_storage_writer_rejects_reserved_metadata_collision(
         )
 
     assert client.puts == []
+
+
+def test_object_storage_writer_preserves_non_reserved_metadata() -> None:
+    client = FakeObjectStorageClient()
+    writer = ingest.ObjectStorageOutputWriter(client=client, bucket="ingest-raw")
+
+    writer.write_raw_artifact(
+        content=b"<html></html>",
+        jurisdiction_id="jp-tokyo",
+        source_family="tokyo_metro_grants",
+        fetched_at=datetime(2026, 7, 5, 9, 1),
+        extension="html",
+        media_type="text/html; charset=utf-8",
+        metadata={"source_url": "https://www.metro.tokyo.lg.jp/example.html"},
+    )
+
+    assert client.puts[0]["metadata"]["source_url"] == "https://www.metro.tokyo.lg.jp/example.html"
 
 
 def _fetch_manifest_record() -> ingest.FetchManifestRecord:
