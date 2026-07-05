@@ -69,3 +69,14 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - `OPL-INGEST-SUBSIDY-20260705` の Spec Gate を承認済みに更新。
 - 承認範囲は補助金・助成金 first、ingest/normalize 分離、filesystem first、jurisdiction/source family/connector 分離、後続深掘り項目の local issue 化。
+
+## [2026-07-05] issue-gate | Draft Tokyo subsidy ingest local issue ledger
+
+- `wiki/syntheses/tokyo-subsidy-ingest-issues.md` を追加し、`OPL-INGEST-SUBSIDY-20260705` の local issue ledger draft を作成。
+- `G2PR-001` から `G2PR-003` を初回 PR 実装範囲、`G2PR-004` から `G2PR-007` を後続深掘り issue として記録。
+- `index.md` に local issue ledger の catalog entry を追加。
+
+## [2026-07-05] gate | Approve Tokyo subsidy ingest local issues
+
+- `OPL-INGEST-SUBSIDY-20260705` の Issue Gate を承認済みに更新。
+- `G2PR-001` から `G2PR-003` を初回 PR の実装対象、`G2PR-004` から `G2PR-007` を後続深掘り issue として承認。
