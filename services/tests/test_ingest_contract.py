@@ -130,6 +130,56 @@ def test_filesystem_writer_uses_stable_content_hash_and_partitioned_raw_path(
     )
 
 
+def test_filesystem_writer_builds_manifest_jsonl_paths(tmp_path: Path) -> None:
+    writer = FileSystemOutputWriter(tmp_path)
+
+    assert writer.manifest_relative_path(run_id="run-20260705", name="discovered") == Path(
+        "manifests/run-20260705/discovered.jsonl"
+    )
+    assert writer.manifest_relative_path(run_id="run-20260705", name="fetched.jsonl") == Path(
+        "manifests/run-20260705/fetched.jsonl"
+    )
+
+
+def test_filesystem_writer_appends_manifest_records_as_utf8_json_lines(
+    tmp_path: Path,
+) -> None:
+    writer = FileSystemOutputWriter(tmp_path)
+    profile = JurisdictionProfile(
+        jurisdiction_id="jp-tokyo",
+        jurisdiction_level="prefecture",
+        country_code="JP",
+        subdivision_code="JP-13",
+        municipality_code=None,
+        display_name="東京都",
+    )
+    discovered_record = {"canonical_url": "https://example.test/grants", "title": "東京都助成"}
+
+    relative_path = writer.append_jsonl(
+        run_id="run-20260705",
+        name="discovered",
+        record=discovered_record,
+    )
+    writer.append_jsonl(
+        run_id="run-20260705",
+        name="discovered",
+        record=profile,
+    )
+
+    manifest_path = tmp_path / "manifests/run-20260705/discovered.jsonl"
+    manifest_bytes = manifest_path.read_bytes()
+    manifest_text = manifest_bytes.decode("utf-8")
+    lines = manifest_text.splitlines()
+
+    assert relative_path == Path("manifests/run-20260705/discovered.jsonl")
+    assert manifest_bytes.endswith(b"\n")
+    assert "東京都" in manifest_text
+    assert "\\u6771" not in manifest_text
+    assert len(lines) == 2
+    assert json.loads(lines[0]) == discovered_record
+    assert json.loads(lines[1]) == profile.to_json_dict()
+
+
 def test_generated_ingest_output_is_gitignored() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     gitignore = repo_root / ".gitignore"

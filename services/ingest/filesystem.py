@@ -1,3 +1,5 @@
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import sha256
@@ -21,6 +23,18 @@ def _normalize_extension(extension: str) -> str:
     normalized = extension.removeprefix(".").lower()
     _validate_path_component(normalized, "extension")
     return normalized
+
+
+def _manifest_record_payload(record: object) -> object:
+    if isinstance(record, Mapping):
+        return dict(record)
+
+    to_json_dict = getattr(record, "to_json_dict", None)
+    if callable(to_json_dict):
+        return to_json_dict()
+
+    msg = "record must be a mapping or expose to_json_dict()"
+    raise TypeError(msg)
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,6 +71,24 @@ class FileSystemOutputWriter:
             / f"{fetched_at:%m}"
             / f"{digest}.{normalized_extension}"
         )
+
+    def manifest_relative_path(self, *, run_id: str, name: str) -> Path:
+        _validate_path_component(run_id, "run_id")
+        _validate_path_component(name, "name")
+        filename = name if name.endswith(".jsonl") else f"{name}.jsonl"
+
+        return Path("manifests") / run_id / filename
+
+    def append_jsonl(self, *, run_id: str, name: str, record: object) -> Path:
+        relative_path = self.manifest_relative_path(run_id=run_id, name=name)
+        absolute_path = self.output_root / relative_path
+        absolute_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with absolute_path.open("a", encoding="utf-8", newline="\n") as manifest_file:
+            manifest_file.write(json.dumps(_manifest_record_payload(record), ensure_ascii=False))
+            manifest_file.write("\n")
+
+        return relative_path
 
     def write_raw_artifact(
         self,
