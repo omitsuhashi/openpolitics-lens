@@ -103,3 +103,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `G2PR-002` の worker 実装を review gate に通し、head `d6c9cfca93a3bfb07c10117deba9d3ebe3bd62bd` を `PR_READY` として記録。
 - `tokyo_metro_grants` connector は fixture HTML discovery と fake fetch に限定し、live network、DB/MinIO、normalize、Evidence、SpendingReviewSignal には踏み込まない。
 - `G2PR-003` の blocker を解除し、CLI と README 整備へ進める状態に更新。
+
+## [2026-07-05] implementation | G2PR-003 ingest CLI and README
+
+- `G2PR-003` の worker 実装を review gate に通し、head `145ef85478362b4df279bc2f75e6b210ac091419` を `PR_READY` として記録。
+- fixture CLI は local HTML、output directory、run id を受け取り、manifest と raw artifact を filesystem に生成する。
+- `--live` は明示 option として残し、初回 PR では network request を行わない guard に留めた。
