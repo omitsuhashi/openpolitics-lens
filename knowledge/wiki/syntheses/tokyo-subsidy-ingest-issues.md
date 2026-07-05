@@ -22,7 +22,7 @@ spec: tokyo-subsidy-ingest-spec.md
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-003 | CLI と README を整備し、fixture 検証を通す | 承認済み | PR_READY | G2PR-002 | なし | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-004 | PostgreSQL / MinIO 永続化を設計・実装する | 承認済み | COMPLETE | G2PR-001 | なし | 未作成 | 承認済み | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-006 | PDF/OCR と表抽出の source family 別 feasibility を行う | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-006 | PDF/OCR と表抽出の source family 別 feasibility を行う | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-007 | 契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
 
 ## Blocker graph
@@ -39,7 +39,7 @@ G2PR-001
 
 cycle はない。Issue Gate 承認後、`G2PR-001` だけが直ちに実行可能で、`G2PR-002` 以降は依存 issue の完了後に実行可能になる。
 
-`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` と `G2PR-005` は後続 issue として local 実装・レビューまで完了した。`G2PR-006` 以降は、PDF/OCR feasibility と他 source connector 設計の別 scope として `ブロック中` のまま残す。
+`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` から `G2PR-006` は後続 issue として local 実装・レビューまで完了した。`G2PR-007` は他 source connector 設計の別 scope として `ブロック中` のまま残す。
 
 ## 初回 PR 実装範囲
 
@@ -235,6 +235,18 @@ ingest が作った Source Document Candidate と RawArtifact から、EvidenceI
 
 - source family ごとに OCR 不要 / 必要、表抽出方法、confidence、parse warning 方針が記録される。
 - PDF/OCR 由来の金額・氏名・団体名には confidence と warning が必須になる。
+
+### 実装結果
+
+- branch: `codex/opl-ingest-subsidy-pdf-ocr-20260705/G2PR-006-pdf-ocr-feasibility`
+- base: `9ef8853ebaff6f8467ea3bc077780c6496dad412`
+- worker head: `be9b9409af2d97247cd25bd68ab3649ce32d17ea`
+- coordinator head after cherry-pick: `abb2547`
+- review range: `9ef8853ebaff6f8467ea3bc077780c6496dad412..be9b9409af2d97247cd25bd68ab3649ce32d17ea`
+- 実装レビュー: 承認済み。初回レビューで政治資金、契約・入札、会議録・議案の OCR 判定が検証済み事実のように読める箇所を修正した。再レビューで Critical / Important / Minor なし。
+- 実装内容: [Tokyo Subsidy PDF/OCR Feasibility](tokyo-subsidy-pdf-ocr-feasibility.md) を追加し、補助金、政治資金、監査、契約・入札、予算・決算、会議録・議案ごとの OCR 要否、parser approach、table extraction、confidence、parse warning、後続 issue を整理した。
+- verification: `git diff --check` は passed。
+- 残リスク: live source 取得、PDF download、OCR 実行、PDF layout / text layer / scan 率確認は non-goal のため未実施。`EvidenceItem.parse_warnings` field は後続 normalize issue で contract 化が必要。
 
 ## G2PR-007: 契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する
 

@@ -149,3 +149,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `tokyo-subsidy-ingest-followup-pdf-ocr-input-packet.json`, `tokyo-subsidy-ingest-followup-pdf-ocr-execution-envelope.json`, `tokyo-subsidy-ingest-followup-pdf-ocr-execution-handoff.md` を追加。
 - `G2PR-006` を docs-first の feasibility issue とし、source family 別に OCR 要否、表抽出、confidence、parse warning 方針を記録する scope に限定した。
 - PDF/OCR engine、parser 実装、live source 取得、意味解釈、DB migration、API、Web UI は非対象として残した。
+
+## [2026-07-05] implementation | G2PR-006 PDF/OCR feasibility
+
+- `G2PR-006` の worker 実装を review gate に通し、worker head `be9b9409af2d97247cd25bd68ab3649ce32d17ea` を `COMPLETE` として記録。
+- `wiki/syntheses/tokyo-subsidy-pdf-ocr-feasibility.md` を追加し、補助金、政治資金、監査、契約・入札、予算・決算、会議録・議案の source family 別 feasibility を整理。
+- OCR 要否、parser approach、table extraction、confidence policy、parse warning policy、後続 implementation issue を記録。
+- review 指摘に従い、政治資金、契約・入札、会議録・議案の OCR 判定を「未検証」と「初期対象では不要」に分けて明確化。
+- verification は `git diff --check` passed。
