@@ -4,7 +4,7 @@
   "revision": 1,
   "epic_base": {
     "ref": "codex/opl-ingest-subsidy-pdf-ocr-20260705/epic-base",
-    "sha": "dbac5916023555591c2876b7bb0618c259018198",
+    "sha": "9ef8853ebaff6f8467ea3bc077780c6496dad412",
     "branch_state": "create_on_run"
   },
   "execution_policy": {

@@ -34,7 +34,7 @@ OCR 要否、表抽出方針、confidence、parse warning を決めるための 
 ## Base
 
 - local base branch: `codex/opl-ingest-subsidy-20260705-followups`
-- base commit: `dbac5916023555591c2876b7bb0618c259018198`
+- base commit: `9ef8853ebaff6f8467ea3bc077780c6496dad412`
 - completed predecessor: `G2PR-005`
 
 ## Verification
