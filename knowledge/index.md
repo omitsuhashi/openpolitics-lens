@@ -7,6 +7,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### 全体設計を確認する
 
 - [Grand Design](architecture.md) — システム境界、データパイプライン、保存方式、MVP の全体像。
+- [Service Layout](service-layout.md) — monorepo の `apps/`, `services/`, `packages/`, `infra/` 構成と依存方向。
 - [Local Infrastructure](local-infrastructure.md) — Docker Compose で起動する datastore service、endpoint、volume、初期 bucket。
 - [Repository README](../README.md) — repo root からこの knowledge root への入口。
 
@@ -14,11 +15,13 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
+- [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source family の追加確認。
 
 ### ドメインとスコアを確認する
 
 - [Domain Model](domain-model.md) — Source Document、Evidence、Public Actor、Decision Event、Relationship Edge の構造。
 - [Scoring](scoring.md) — 政策関与度、資金近接度、時系列一致などの計算方針。
+- [Spending Review](spending-review.md) — 補助金・契約・予算・監査を横断する支出検証設計。
 
 ### 法務・表示リスクを確認する
 
@@ -36,6 +39,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### LLM Wiki として読む
 
 - [LLM Wiki Documentation Package](wiki/queries/2026-07-03-llm-wiki-documentation-package.md) — この文書群の knowledge root、canonical page、local override、更新手順。
+- [Tokyo Data Source Design Query](wiki/queries/2026-07-05-tokyo-data-source-design.md) — 東京都 source の不足、取得方式、構造化方針。
 
 ## 現役ページ一覧
 
@@ -43,12 +47,16 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 
 - [Grand Design](architecture.md) — 政治過程を根拠付きで追跡するアプリケーションの全体設計。
   検索語: grand design, architecture, module, pipeline, data store, 設計, アーキテクチャ
+- [Service Layout](service-layout.md) — monorepo の app/service/package/infra 境界と依存方向を定義する。
+  検索語: service layout, monorepo, apps, services, packages, infra, folder, directory, フォルダ構成, ディレクトリ構成
 - [Local Infrastructure](local-infrastructure.md) — ローカル Docker Compose の PostgreSQL、MinIO、Neo4j、Meilisearch 構成。
   検索語: docker compose, local infrastructure, PostgreSQL, MinIO, Neo4j, Meilisearch, datastore, ローカル, インフラ
 - [Domain Model](domain-model.md) — ドメイン概念、正規化単位、関係 graph の境界を定義する。
   検索語: domain model, glossary, evidence, actor, vote, funding, contract, ドメイン, 証拠, 関係
 - [Data Sources](data-sources.md) — 国会・自治体・政治資金・契約・予算・選挙公報の取得設計。
   検索語: data source, ingest, API, crawler, municipality, 自治体, データ取得
+- [Spending Review](spending-review.md) — 補助金、契約、予算、決算、監査指摘から支出検証シグナルを作る設計。
+  検索語: spending review, subsidy, contract, audit, public money, 支出検証, 補助金, 監査
 - [Scoring](scoring.md) — 断定を避けたスコアと explainability の設計。
   検索語: scoring, confidence, influence, proximity, timeline, スコア, 信頼度
 - [Legal And Evidence Risk](legal-risk.md) — 名誉毀損、著作権、出典表示、訂正申請、推定表現のルール。
@@ -60,11 +68,15 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 公式ソースの確認結果と採用上の留保。
   検索語: official source, NDL, Shugiin, e-Stat, Tokyo, Yokohama, Osaka, 公式資料
+- [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都議会、選管、財務局、教育委員会、子供政策、open data の追加 source 確認。
+  検索語: Tokyo data source, 東京都, 東京都議会, 選管, 教育委員会, 子供政策, open data
 
 ### Queries
 
 - [LLM Wiki Documentation Package](wiki/queries/2026-07-03-llm-wiki-documentation-package.md) — `knowledge/` knowledge root の canonical page、local override、更新手順をまとめる。
   検索語: llm-wiki, knowledge root, canonical page, local override, query note, wiki運用, 文書化
+- [Tokyo Data Source Design Query](wiki/queries/2026-07-05-tokyo-data-source-design.md) — 東京都 source の充足判断、取得 pipeline、構造化単位、次の grilling 質問をまとめる。
+  検索語: Tokyo source design, data source, discover, fetch, parse, source family, 構造化, 取得設計
 
 ### ADR
 

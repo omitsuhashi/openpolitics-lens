@@ -132,6 +132,23 @@ Web 向け read API。Evidence なしの表示を禁止する。
 - すべての表示に一次資料 link
 - 誤解を生む ranking や断定ラベルの回避
 
+## Repository Layout
+
+実装 repository は monorepo とし、物理 directory は [Service Layout](service-layout.md) を正とする。実行単位は `apps/` と `services/`、共有契約は `packages/`、ローカル運用補助は `infra/` に置く。
+
+初期 directory:
+
+- `apps/web`: ユーザー向け Web UI。
+- `services/api`: Evidence bundle 付き read API。
+- `services/ingest`: 外部 source の discover、fetch、raw artifact 保存。
+- `services/normalize`: RawArtifact から EvidenceItem と正規化 fact を生成。
+- `services/graph-builder`: RDB から graph projection を生成。
+- `services/worker`: batch job、queue、schedule の orchestration。
+- `packages/contracts`: OpenAPI、JSON Schema、event schema。
+- `packages/db`: migration、seed、local fixture。
+- `packages/domain`: 共有 domain vocabulary と軽量 model。
+- `infra/local`, `infra/scripts`: ローカル開発と repo 横断 script。
+
 ## Data Flow
 
 ```mermaid

@@ -6,6 +6,7 @@
 
 - [knowledge/index.md](knowledge/index.md) — 設計文書と ADR の入口。
 - [knowledge/architecture.md](knowledge/architecture.md) — grand design。
+- [knowledge/service-layout.md](knowledge/service-layout.md) — monorepo の app/service/package/infra 構成。
 - [knowledge/local-infrastructure.md](knowledge/local-infrastructure.md) — ローカル Docker Compose の datastore 構成。
 - [knowledge/roadmap.md](knowledge/roadmap.md) — MVP と導入順序。
 - [CONTEXT.md](CONTEXT.md) — domain glossary。

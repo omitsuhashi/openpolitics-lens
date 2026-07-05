@@ -157,6 +157,61 @@ subtype:
 
 契約の議案、入札結果、契約先、予算項目は別 entity とし、Evidence で結ぶ。
 
+### SubsidyProgram
+
+補助金、助成金、給付金、交付金などの制度または事業。
+
+主な属性:
+
+- `id`
+- `program_name`
+- `admin_body_ref`
+- `policy_theme_id`
+- `eligibility`
+- `budget_line_ref`
+- `application_period`
+- `reported_year`
+- `source_document_id`
+
+SubsidyProgram は PublicMoneyFlow の発生源になり得るが、制度そのものと個別交付を混ぜない。個別交付先や金額が公開されている場合だけ `PublicMoneyFlow.subsidy` として保持する。
+
+### AuditFinding
+
+監査報告、包括外部監査、財政援助団体等監査、住民監査請求結果などに記録された公式な指摘または措置状況。
+
+主な属性:
+
+- `id`
+- `audit_type`
+- `target_body_ref`
+- `target_program_ref`
+- `finding_type`
+- `finding_summary`
+- `fiscal_year`
+- `status`
+- `measure_taken_ref`
+- `evidence_item_id`
+
+AuditFinding は「公式に指摘された事項」を表す。アプリ側の推定や疑問点を AuditFinding として保存しない。
+
+### SpendingReviewSignal
+
+PublicMoneyFlow、SubsidyProgram、AuditFinding、PerformanceIndicator を横断して、追加確認が必要な支出を示す検証用 signal。
+
+主な属性:
+
+- `id`
+- `signal_type`
+- `target_ref`
+- `policy_theme_id`
+- `severity_band`
+- `supporting_evidence_item_ids`
+- `counter_evidence_item_ids`
+- `limitations`
+- `review_state`
+
+SpendingReviewSignal は無駄遣い、不正、便宜供与の認定ではない。public UI では「支出検証シグナル」「追加確認が必要な支出」と表示する。
+
 ### RelationshipEdge
 
 GraphDB へ projection する edge。
@@ -189,6 +244,7 @@ GraphDB へ projection する edge。
 - `PAID_TO`
 - `CONTRACT_AWARDED_TO`
 - `SUBSIDY_GRANTED_TO`
+- `HAS_AUDIT_FINDING`
 - `RELATED_TO_SOURCE`
 
 推定 edge:
@@ -196,6 +252,7 @@ GraphDB へ projection する edge。
 - `TEMPORALLY_NEAR`
 - `POTENTIALLY_RELATED_TO_THEME`
 - `POSSIBLE_BENEFICIARY_CONTACT`
+- `POSSIBLE_SPENDING_REVIEW_SIGNAL`
 
 推定 edge は根拠と反証可能性を必ず持つ。
 
@@ -236,6 +293,7 @@ review が必要な条件:
 
 - [Grand Design](architecture.md) — module と storage の全体像。
 - [Scoring](scoring.md) — model を使った score calculation。
+- [Spending Review](spending-review.md) — 補助金・契約・予算を検証する設計。
 - [Legal And Evidence Risk](legal-risk.md) — 表示上の制約。
 
 ## 出典

@@ -40,12 +40,15 @@ AI 要約だけを share card や preview に出す場合でも、原文確認 l
 - 「公開資料上、時系列が近い」
 - 「この政策テーマに関与した可能性を示す資料がある」
 - 「追加確認が必要」
+- 「支出検証シグナル」
+- 「監査で指摘された事項」
 
 使ってはいけない表現:
 
 - 「裏で糸を引いた」
 - 「癒着」
 - 「不正」
+- 「無駄遣い」
 - 「見返り」
 - 「便宜供与」
 - 「黒幕」
@@ -78,12 +81,15 @@ Correction Request は最初の MVP から入れる。
 
 - 資金接点と採決を横に並べるだけで因果を示唆する。
 - 受益者接近度を「利益供与」と読める形で出す。
+- 支出検証シグナルを「無駄遣い認定」と読める形で出す。
+- 監査の指摘と、アプリが計算した注意 signal を同じ色・同じ文言で表示する。
 - 個人別賛否がない会派単位情報を個人の vote に見せる。
 - OCR の誤読をそのまま金額や氏名として表示する。
 
 対策:
 
 - 因果ではなく時系列一致として表示する。
+- 監査指摘は「公式監査に基づく指摘」、計算 signal は「追加確認が必要な支出」と分ける。
 - `confidence` と `limitations` を visible にする。
 - low-confidence extraction は public UI へ出す前に review する。
 - source excerpt と full source link を同じ画面に置く。
@@ -122,6 +128,7 @@ human review が必要なもの:
 ## 関連ページ
 
 - [Scoring](scoring.md) — risk を避けた score 表示。
+- [Spending Review](spending-review.md) — 支出検証 signal の表示制約。
 - [Domain Model](domain-model.md) — Evidence と inferred relationship の境界。
 - [Grand Design](architecture.md) — evidence module の責務。
 

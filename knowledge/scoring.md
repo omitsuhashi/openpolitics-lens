@@ -114,6 +114,26 @@
 - 「受益者」は政策・契約・補助金の公開資料上で利益を受ける主体を指す。
 - 不正・便宜・癒着を意味しない。
 
+### Spending Review Signal Score
+
+支出検証シグナル。PublicMoneyFlow、SubsidyProgram、AuditFinding、PerformanceIndicator を横断し、追加確認すべき支出を並べるための補助指標。
+
+要素:
+
+- 予算額、決算額、執行率、繰越、不用額の変化
+- 同一事業者、同一団体、同一制度への支出集中
+- 随意契約、単独応札、低落札率、入札不調などの契約上の注意点
+- 補助目的、対象要件、交付先、実績報告、成果指標の接続不全
+- 監査報告、包括外部監査、財政援助団体等監査、住民監査請求結果での指摘
+- Policy Theme 上の成果指標と支出増減の乖離
+
+注意:
+
+- この score は「無駄遣い」「不正」「便宜供与」を認定しない。
+- 監査で公式に指摘された事項と、アプリが計算した注意 signal を分ける。
+- 成果指標が悪化していても、政策効果の因果は自動推定しない。
+- public UI では「支出検証シグナル」「追加確認が必要な支出」と表示する。
+
 ## Confidence
 
 各 score factor は confidence を持つ。
@@ -149,18 +169,22 @@ API と DB に保存する score は次を必須にする。
 - 「公開資料上の近接」
 - 「この score に寄与した資料」
 - 「反証・未確認点」
+- 「支出検証シグナル」
+- 「追加確認が必要な支出」
 
 表示しない:
 
 - 「黒幕」
 - 「癒着」
 - 「不正」
+- 「無駄遣い」
 - 「裏で動かした」
 - 「買収」
 
 ## Related Pages
 
 - [Domain Model](domain-model.md) — score の input。
+- [Spending Review](spending-review.md) — 補助金・契約・予算の検証 signal。
 - [Legal And Evidence Risk](legal-risk.md) — 表示文言と risk。
 - [Grand Design](architecture.md) — scoring module の位置づけ。
 

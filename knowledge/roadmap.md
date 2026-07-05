@@ -14,6 +14,7 @@
 - 5 種類の source から各 10 件の sample artifact
 - parser warning taxonomy
 - Evidence Item schema の確定
+- 教育・子育ての SubsidyProgram と監査 source の sample artifact
 
 対象 source:
 
@@ -22,12 +23,15 @@
 - 東京都選挙管理委員会 選挙公報・選挙結果
 - 東京都選挙管理委員会 政治資金収支報告書
 - 東京都財務局・電子調達 契約/予算
+- 都庁総合ホームページ 助成・補助金
+- 東京都監査事務局 財政援助団体等監査・包括外部監査
 
 Gate:
 
 - 各 source で raw artifact を保存できる。
 - source URL、取得日時、content hash を記録できる。
 - Evidence Item を 1 source 10 件以上作れる。
+- SpendingReviewSignal を public UI に出す前に、監査指摘とアプリ計算 signal を分けて保存できる。
 
 ## Phase 1: Evidence-first MVP
 
@@ -40,13 +44,15 @@ Gate:
 - 根拠付きタイムライン
 - source viewer
 - correction request の最小導線
+- 教育・子育ての支出検証ページ
 
 技術:
 
 - PostgreSQL
 - S3 compatible object storage
-- Python ingest/normalize
-- TypeScript Web/API または Next.js route handlers
+- Python ingest/normalize/API
+- TypeScript Web
+- monorepo service layout
 
 GraphDB はこの段階では read-only projection の検証に留めてもよい。
 
@@ -55,6 +61,7 @@ Gate:
 - 画面上のすべての claim から source URL と Evidence Item に戻れる。
 - AI 要約を消してもアプリの主要価値が成立する。
 - low-confidence extraction が public UI に混ざらない。
+- `無駄遣い` と断定せず、支出検証シグナルとして表示できる。
 
 ## Phase 2: Graph Projection
 
@@ -87,6 +94,7 @@ Gate:
 - Policy Involvement Score
 - Funding Proximity Score
 - Timeline Alignment Score
+- Spending Review Signal Score
 - admin review queue
 - score run versioning
 
@@ -121,6 +129,7 @@ Gate:
 - 都議会議案、予算、委員会、選挙公報に出やすい。
 - 契約・補助金・施設整備とも接続しやすい。
 - 有権者にとって読みやすい。
+- 将来的な補助金・契約・監査の支出検証に進めやすい。
 
 第二候補: 公共事業。
 
@@ -134,7 +143,9 @@ Gate:
 ## 関連ページ
 
 - [Data Sources](data-sources.md) — source 候補。
+- [Spending Review](spending-review.md) — 補助金・契約・予算の検証設計。
 - [Grand Design](architecture.md) — system design。
+- [Service Layout](service-layout.md) — monorepo の実装 directory 構成。
 - [ADR 0002: Tokyo first MVP](adr/0002-tokyo-first-mvp.md) — 東京都 first の判断。
 
 ## 出典
