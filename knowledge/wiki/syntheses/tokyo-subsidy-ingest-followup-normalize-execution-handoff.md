@@ -35,7 +35,7 @@ candidate に限定し、title 由来の観測 claim だけを生成する。
 ## Base
 
 - local base branch: `codex/opl-ingest-subsidy-20260705-followups`
-- base commit: `8e7e1c37a046a89bb3615ad3d8a403cc76c644f8`
+- base commit: `202ddba14bebc09c07f8a6a9ad9f60bc8c0455b1`
 - completed predecessor: `G2PR-004`
 
 ## Verification
