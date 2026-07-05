@@ -4,7 +4,7 @@
   "revision": 1,
   "epic_base": {
     "ref": "codex/opl-ingest-subsidy-connector-design-20260705/epic-base",
-    "sha": "d64ad91ea45a7a8648fe46f0e083efd249dd0e36",
+    "sha": "0ef2f6c4f5dcb534454980088f098dd05916502e",
     "branch_state": "create_on_run"
   },
   "execution_policy": {

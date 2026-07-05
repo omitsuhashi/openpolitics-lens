@@ -35,7 +35,7 @@ fixture / live acquisition の分離方針を固定する。
 ## Base
 
 - local base branch: `codex/opl-ingest-subsidy-20260705-followups`
-- base commit: `d64ad91ea45a7a8648fe46f0e083efd249dd0e36`
+- base commit: `0ef2f6c4f5dcb534454980088f098dd05916502e`
 - completed predecessor: `G2PR-006`
 
 ## Verification
