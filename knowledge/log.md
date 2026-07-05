@@ -58,3 +58,14 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `apps/web`, `services/api`, `services/ingest`, `services/normalize`, `services/graph-builder`, `services/worker`, `packages/contracts`, `packages/db`, `packages/domain`, `infra/local`, `infra/scripts` を初期 directory として追加。
 - 各 directory に責務 README を置き、runtime package は実装開始時に追加する方針を明記。
 - `architecture.md`, `roadmap.md`, `index.md`, `README.md` から monorepo service layout へ辿れるように更新。
+
+## [2026-07-05] design | Tokyo subsidy ingest spec draft
+
+- `wiki/syntheses/tokyo-subsidy-ingest-spec.md` を追加し、`OPL-INGEST-SUBSIDY-20260705` の Spec Gate draft を作成。
+- 補助金・助成金 first、ingest/normalize 分離、都庁助成・補助金入口 connector、filesystem first、fixture-first verification、jurisdiction/source family/connector 分離を採用判断として記録。
+- `data-sources.md`, `service-layout.md`, `services/ingest/README.md`, `CONTEXT.md`, `index.md` を Source Document Candidate と ingest 責務境界に合わせて更新。
+
+## [2026-07-05] gate | Approve Tokyo subsidy ingest spec
+
+- `OPL-INGEST-SUBSIDY-20260705` の Spec Gate を承認済みに更新。
+- 承認範囲は補助金・助成金 first、ingest/normalize 分離、filesystem first、jurisdiction/source family/connector 分離、後続深掘り項目の local issue 化。

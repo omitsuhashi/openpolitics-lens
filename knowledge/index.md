@@ -14,6 +14,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### データ取得方針を確認する
 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
+- [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都補助金・助成金 first の ingest 初期仕様と後続 issue 方針。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
 - [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source family の追加確認。
 
@@ -63,6 +64,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: legal, risk, correction, citation, defamation, 法務, 訂正, 出典
 - [Roadmap](roadmap.md) — MVP、自治体選定、拡張順序、検証 gate をまとめる。
   検索語: roadmap, MVP, Tokyo, rollout, 自治体選定, 導入計画
+- [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都の補助金・助成金 source を jurisdiction 分離と filesystem-first で ingest する初期仕様。
+  検索語: ingest, subsidy, grants, Tokyo, jurisdiction, connector, filesystem, manifest, Source Document Candidate, 補助金, 助成金, 取得仕様
 
 ### Sources
 

@@ -67,11 +67,12 @@ Web UI と将来の public/admin client に向けた API service を置く。
 
 - `discover`: source family ごとの入口 page、年度 page、検索入口から candidate URL を集める。
 - `fetch`: HTML、PDF、CSV、JSON、XML を RawArtifact として object storage に不変保存する。
-- `parse`: source 固有の軽い抽出を行い、SourceDocument / raw parse output の候補を作る。
+- `candidate`: source 固有の軽い metadata 抽出を行い、Source Document Candidate を作る。
 - connector version、rate limit policy、terms note、content hash、HTTP header を保存する。
 
 禁止すること:
 
+- EvidenceItem、EvidenceClaim、正規化済み fact を作らない。
 - 人物・団体・法人の高リスクな自動名寄せをしない。
 - 政治的な意味づけや score を作らない。
 - source から直接言えない relation を確認済み edge として作らない。
@@ -82,6 +83,7 @@ Web UI と将来の public/admin client に向けた API service を置く。
 
 責務:
 
+- Source Document Candidate を検証し、SourceDocument と EvidenceItem を生成する。
 - 日付、金額、議案番号、会議名、会期、発言番号を正規化する。
 - PDF/OCR 由来の表記揺れ、confidence、parse warning を保存する。
 - Person、Bill、Speech、PoliticalGroup、FundingContact、PublicMoneyFlow などの候補 fact を作る。
@@ -229,7 +231,7 @@ services/worker
 ## 関連ページ
 
 - [Grand Design](architecture.md) — module boundary と data flow の正本。
-- [Data Sources](data-sources.md) — `discover -> fetch -> parse` と connector 型。
+- [Data Sources](data-sources.md) — `discover -> fetch -> candidate` と connector 型。
 - [Local Infrastructure](local-infrastructure.md) — PostgreSQL、MinIO、Neo4j、Meilisearch の local datastore 構成。
 - [Roadmap](roadmap.md) — MVP の導入順序。
 
