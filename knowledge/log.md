@@ -97,3 +97,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `G2PR-001` の worker 実装を review gate に通し、head `c539566450bcaf7aab265cd5f4568fcd9c687934` を `PR_READY` として記録。
 - 初回レビューで manifest JSONL writer 欠落の Important 指摘があり、`manifest_relative_path()` と `append_jsonl()` を追加して再レビュー承認済み。
 - `G2PR-002` の blocker を解除し、都庁助成・補助金 connector の fixture discovery/fetch 実装へ進める状態に更新。
+
+## [2026-07-05] implementation | G2PR-002 Tokyo grants fixture connector
+
+- `G2PR-002` の worker 実装を review gate に通し、head `d6c9cfca93a3bfb07c10117deba9d3ebe3bd62bd` を `PR_READY` として記録。
+- `tokyo_metro_grants` connector は fixture HTML discovery と fake fetch に限定し、live network、DB/MinIO、normalize、Evidence、SpendingReviewSignal には踏み込まない。
+- `G2PR-003` の blocker を解除し、CLI と README 整備へ進める状態に更新。
