@@ -161,7 +161,9 @@ flowchart LR
 
 ### RDB: system of record
 
-推奨: PostgreSQL。
+採用: PostgreSQL 18。
+
+ローカル開発では Docker Compose の `postgres` service として `postgres:18.4-trixie` を使う。PostgreSQL は引き続き system of record であり、GraphDB、検索 index、object storage の projection や materialized view より優先される。
 
 主に保持するもの:
 
@@ -195,7 +197,9 @@ RDB を正本にする理由:
 
 ### Object storage: immutable raw artifacts
 
-推奨: S3 compatible storage。
+採用: S3 compatible storage。ローカル開発では MinIO を使う。
+
+Docker Compose では `minio` service を `quay.io/minio/minio` 系 image で起動し、`minio-init` service が `openpolitics-raw` bucket を作成し versioning を有効化する。raw artifact は RDB の `raw_artifacts` record と content hash で対応付ける。
 
 保存 key 例:
 
@@ -215,17 +219,21 @@ raw/{source_id}/{yyyy}/{mm}/{content_hash}.{ext}
 
 ### GraphDB: relationship projection
 
-推奨候補:
+採用: Neo4j。
 
-- Neo4j: 開発速度、可視化、Cypher、周辺 tooling が強い。
-- Amazon Neptune / Graph DB managed service: managed 運用を優先する場合。
-- PostgreSQL + Apache AGE は初期検証候補だが、長期の graph tooling と人材面では Neo4j の方が読みやすい。
+ローカル開発では Docker Compose の `neo4j` service として Neo4j Community Edition を起動する。Neo4j は開発速度、可視化、Cypher、周辺 tooling を理由に採用する。
 
 GraphDB は正本ではなく projection。再生成可能であることを不変条件にする。
 
 ### Search index
 
-推奨: OpenSearch または Meilisearch。日本語全文検索、facet、highlight、source document search に使う。検索結果は Evidence Item に戻す。
+採用: Meilisearch。
+
+ローカル開発では Docker Compose の `meilisearch` service として起動する。日本語全文検索、facet、highlight、source document search に使う。検索結果は Evidence Item に戻す。
+
+### Local Docker Compose endpoints
+
+ローカル datastore 構成の詳細は [Local Infrastructure](local-infrastructure.md) を正とする。host からの接続は loopback に限定し、アプリケーション container からは Compose network 上の service name で接続する。
 
 ### Vector index
 

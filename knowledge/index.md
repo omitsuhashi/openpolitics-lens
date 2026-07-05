@@ -7,6 +7,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### 全体設計を確認する
 
 - [Grand Design](architecture.md) — システム境界、データパイプライン、保存方式、MVP の全体像。
+- [Local Infrastructure](local-infrastructure.md) — Docker Compose で起動する datastore service、endpoint、volume、初期 bucket。
 - [Repository README](../README.md) — repo root からこの knowledge root への入口。
 
 ### データ取得方針を確認する
@@ -42,6 +43,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 
 - [Grand Design](architecture.md) — 政治過程を根拠付きで追跡するアプリケーションの全体設計。
   検索語: grand design, architecture, module, pipeline, data store, 設計, アーキテクチャ
+- [Local Infrastructure](local-infrastructure.md) — ローカル Docker Compose の PostgreSQL、MinIO、Neo4j、Meilisearch 構成。
+  検索語: docker compose, local infrastructure, PostgreSQL, MinIO, Neo4j, Meilisearch, datastore, ローカル, インフラ
 - [Domain Model](domain-model.md) — ドメイン概念、正規化単位、関係 graph の境界を定義する。
   検索語: domain model, glossary, evidence, actor, vote, funding, contract, ドメイン, 証拠, 関係
 - [Data Sources](data-sources.md) — 国会・自治体・政治資金・契約・予算・選挙公報の取得設計。

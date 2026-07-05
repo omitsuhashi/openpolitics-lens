@@ -29,3 +29,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - Current knowledge root を `knowledge/` として明文化。
 - repo root `AGENTS.md` と `README.md` の入口を `knowledge/` へ更新。
 - `knowledge/AGENTS.md`, `knowledge/index.md`, `wiki/queries/2026-07-03-llm-wiki-documentation-package.md` の active reference を `knowledge/` に統一。
+
+## [2026-07-05] design | Local datastore Docker Compose stack
+
+- `compose.yaml` と `.env.example` を追加。
+- ローカル datastore を PostgreSQL 18、MinIO、Neo4j、Meilisearch で固定。
+- `local-infrastructure.md` を追加し、service、endpoint、volume、data ownership を明文化。
+- `architecture.md`, `adr/0001-evidence-first-hybrid-store.md`, `index.md`, `README.md` から local datastore 構成へ辿れるように更新。
