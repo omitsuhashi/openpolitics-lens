@@ -17,9 +17,9 @@ spec: tokyo-subsidy-ingest-spec.md
 
 | Epic ID | ローカルID | タイトル | レビュー状態 | 実行状態 | ブロック元 | ブロック先 | GitHub Issue | 実装レビュー | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-001 | Jurisdiction Profile と ingest contract / filesystem output の土台を作る | 承認済み | PR_READY | なし | G2PR-002, G2PR-004 | 未作成 | 承認済み | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-002 | 都庁助成・補助金 connector の fixture discovery/fetch を実装する | 承認済み | PR_READY | G2PR-001 | G2PR-003, G2PR-005, G2PR-006, G2PR-007 | 未作成 | 承認済み | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-003 | CLI と README を整備し、fixture 検証を通す | 承認済み | PR_READY | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-001 | Jurisdiction Profile と ingest contract / filesystem output の土台を作る | 承認済み | PR_READY | なし | G2PR-002, G2PR-004 | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-002 | 都庁助成・補助金 connector の fixture discovery/fetch を実装する | 承認済み | PR_READY | G2PR-001 | G2PR-003, G2PR-005, G2PR-006, G2PR-007 | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-003 | CLI と README を整備し、fixture 検証を通す | 承認済み | PR_READY | G2PR-002 | なし | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-004 | PostgreSQL / MinIO 永続化を設計・実装する | 承認済み | ブロック中 | G2PR-001 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-006 | PDF/OCR と表抽出の source family 別 feasibility を行う | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
@@ -39,7 +39,7 @@ G2PR-001
 
 cycle はない。Issue Gate 承認後、`G2PR-001` だけが直ちに実行可能で、`G2PR-002` 以降は依存 issue の完了後に実行可能になる。
 
-`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は local `PR_READY` になった。`G2PR-004` 以降は初回 PR の非目標であるため、依存の一部が満たされても後続 scope として `ブロック中` のまま残す。
+`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` 以降は初回 PR の非目標であるため、依存の一部が満たされても後続 scope として `ブロック中` のまま残す。
 
 ## 初回 PR 実装範囲
 
@@ -231,7 +231,7 @@ ingest が作った Source Document Candidate と RawArtifact から、EvidenceI
 
 GitHub Issue mirror は未作成。現時点では local issue ledger を canonical とし、GitHub issue 作成は行わない。
 
-PR 作成は Remote Gate で扱う。`gh` CLI は利用可能だが、現 token は invalid。remote `origin` は `git@github.com:omitsuhashi/openpolitics-lens.git` として存在する。
+PR 作成は Remote Gate 承認後に実施済み。remote `main` と `codex/ingestpr` を push し、draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) を作成した。
 
 ## Issue Gate で確認すること
 

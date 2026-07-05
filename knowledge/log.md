@@ -109,3 +109,8 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `G2PR-003` の worker 実装を review gate に通し、head `145ef85478362b4df279bc2f75e6b210ac091419` を `PR_READY` として記録。
 - fixture CLI は local HTML、output directory、run id を受け取り、manifest と raw artifact を filesystem に生成する。
 - `--live` は明示 option として残し、初回 PR では network request を行わない guard に留めた。
+
+## [2026-07-05] remote | Open Tokyo subsidy ingest draft PR
+
+- remote `main` と `codex/ingestpr` を push し、draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) を作成。
+- PR は `main` base、`codex/ingestpr` head、draft/open/mergeable として確認済み。
