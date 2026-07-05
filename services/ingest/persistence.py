@@ -10,11 +10,38 @@ class FetchManifestDbRows:
     source_document_candidate: JsonDict
 
 
+def _validate_candidate_invariants(record: FetchManifestRecord) -> None:
+    candidate = record.source_document_candidate
+    expected_values = {
+        "canonical_url": record.canonical_url,
+        "raw_artifact_path": record.raw_artifact_path,
+        "jurisdiction_id": record.connector.jurisdiction.jurisdiction_id,
+        "source_family": record.connector.source_family.source_family,
+    }
+    actual_values = {
+        "canonical_url": candidate.canonical_url,
+        "raw_artifact_path": candidate.raw_artifact_path,
+        "jurisdiction_id": candidate.jurisdiction_id,
+        "source_family": candidate.source_family,
+    }
+
+    mismatches = [
+        field_name
+        for field_name, expected_value in expected_values.items()
+        if actual_values[field_name] != expected_value
+    ]
+    if mismatches:
+        fields = ", ".join(mismatches)
+        msg = f"source_document_candidate invariant mismatch: {fields}"
+        raise ValueError(msg)
+
+
 def build_fetch_manifest_db_rows(
     record: FetchManifestRecord,
     *,
     object_bucket: str,
 ) -> FetchManifestDbRows:
+    _validate_candidate_invariants(record)
     raw_artifact_id = str(
         uuid5(
             NAMESPACE_URL,

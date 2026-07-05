@@ -21,6 +21,8 @@ create table if not exists raw_artifacts (
     terms_note text not null,
     created_at timestamptz not null default now(),
     unique (object_bucket, object_key),
+    constraint raw_artifacts_candidate_identity_key
+        unique (raw_artifact_id, raw_artifact_path, jurisdiction_id, source_family),
     check (object_key = raw_artifact_path),
     check (object_key ~ '^raw/[^/]+/[^/]+/[0-9]{4}/[0-9]{2}/[0-9a-f]{64}\.[^/]+$')
 );
@@ -37,7 +39,7 @@ comment on column raw_artifacts.raw_artifact_path is
 
 create table if not exists source_document_candidates (
     source_document_candidate_id uuid primary key default gen_random_uuid(),
-    raw_artifact_id uuid not null references raw_artifacts (raw_artifact_id) on delete restrict,
+    raw_artifact_id uuid not null,
     canonical_url text not null,
     title text not null,
     source_type text not null,
@@ -47,6 +49,10 @@ create table if not exists source_document_candidates (
     retrieved_at timestamptz not null,
     raw_artifact_path text not null,
     created_at timestamptz not null default now(),
+    constraint source_document_candidates_raw_artifact_fk
+        foreign key (raw_artifact_id, raw_artifact_path, jurisdiction_id, source_family)
+        references raw_artifacts (raw_artifact_id, raw_artifact_path, jurisdiction_id, source_family)
+        on delete restrict,
     unique (raw_artifact_id, canonical_url, source_type)
 );
 

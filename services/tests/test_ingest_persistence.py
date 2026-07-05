@@ -1,7 +1,10 @@
 import hashlib
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 import ingest
 
@@ -9,8 +12,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION_PATH = REPO_ROOT / "packages/db/migrations/20260705_001_ingest_persistence.sql"
 
 
+def _sql() -> str:
+    return " ".join(MIGRATION_PATH.read_text(encoding="utf-8").lower().split())
+
+
 def test_ingest_persistence_migration_declares_raw_artifacts_and_candidates() -> None:
-    sql = MIGRATION_PATH.read_text(encoding="utf-8").lower()
+    sql = _sql()
 
     assert "create table if not exists raw_artifacts" in sql
     assert "create table if not exists source_document_candidates" in sql
@@ -22,6 +29,14 @@ def test_ingest_persistence_migration_declares_raw_artifacts_and_candidates() ->
     assert "unique (content_hash)" not in sql
     assert "raw_artifact_id" in sql
     assert "references raw_artifacts" in sql
+    assert "constraint raw_artifacts_candidate_identity_key" in sql
+    assert "unique (raw_artifact_id, raw_artifact_path, jurisdiction_id, source_family)" in sql
+    assert "constraint source_document_candidates_raw_artifact_fk" in sql
+    assert (
+        "foreign key (raw_artifact_id, raw_artifact_path, jurisdiction_id, source_family) "
+        "references raw_artifacts (raw_artifact_id, raw_artifact_path, jurisdiction_id, "
+        "source_family)"
+    ) in sql
 
 
 class FakeObjectStorageClient:
@@ -82,6 +97,35 @@ def test_object_storage_writer_uses_raw_object_key_contract() -> None:
             },
         }
     ]
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"content_hash": "b" * 64},
+        {"hash_algorithm": "md5"},
+        {"jurisdiction_id": "jp-yokohama"},
+        {"source_family": "other_family"},
+    ],
+)
+def test_object_storage_writer_rejects_reserved_metadata_collision(
+    metadata: dict[str, str],
+) -> None:
+    client = FakeObjectStorageClient()
+    writer = ingest.ObjectStorageOutputWriter(client=client, bucket="ingest-raw")
+
+    with pytest.raises(ValueError, match="reserved metadata"):
+        writer.write_raw_artifact(
+            content=b"<html></html>",
+            jurisdiction_id="jp-tokyo",
+            source_family="tokyo_metro_grants",
+            fetched_at=datetime(2026, 7, 5, 9, 1),
+            extension="html",
+            media_type="text/html; charset=utf-8",
+            metadata=metadata,
+        )
+
+    assert client.puts == []
 
 
 def _fetch_manifest_record() -> ingest.FetchManifestRecord:
@@ -147,3 +191,27 @@ def test_fetch_manifest_record_builds_db_row_payloads() -> None:
         "retrieved_at": datetime(2026, 7, 5, 9, 1, tzinfo=UTC),
         "raw_artifact_path": record.raw_artifact_path,
     }
+
+
+@pytest.mark.parametrize(
+    ("field_name", "replacement_value"),
+    [
+        ("canonical_url", "https://www.metro.tokyo.lg.jp/other.html"),
+        ("raw_artifact_path", "raw/jp-tokyo/tokyo_metro_grants/2026/07/" + ("b" * 64) + ".html"),
+        ("jurisdiction_id", "jp-yokohama"),
+        ("source_family", "other_family"),
+    ],
+)
+def test_fetch_manifest_db_rows_reject_candidate_invariant_mismatches(
+    field_name: str,
+    replacement_value: str,
+) -> None:
+    record = _fetch_manifest_record()
+    mismatched_candidate = replace(
+        record.source_document_candidate,
+        **{field_name: replacement_value},
+    )
+    mismatched_record = replace(record, source_document_candidate=mismatched_candidate)
+
+    with pytest.raises(ValueError, match=field_name):
+        ingest.build_fetch_manifest_db_rows(mismatched_record, object_bucket="ingest-raw")
