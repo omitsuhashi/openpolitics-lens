@@ -23,7 +23,7 @@ spec: tokyo-subsidy-ingest-spec.md
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-004 | PostgreSQL / MinIO 永続化を設計・実装する | 承認済み | COMPLETE | G2PR-001 | なし | 未作成 | 承認済み | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-006 | PDF/OCR と表抽出の source family 別 feasibility を行う | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-007 | 契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-007 | 契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
 
 ## Blocker graph
 
@@ -39,7 +39,7 @@ G2PR-001
 
 cycle はない。Issue Gate 承認後、`G2PR-001` だけが直ちに実行可能で、`G2PR-002` 以降は依存 issue の完了後に実行可能になる。
 
-`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` から `G2PR-006` は後続 issue として local 実装・レビューまで完了した。`G2PR-007` は他 source connector 設計の別 scope として `ブロック中` のまま残す。
+`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` から `G2PR-007` は後続 issue として local 実装・レビューまで完了した。
 
 ## 初回 PR 実装範囲
 
@@ -263,6 +263,18 @@ ingest が作った Source Document Candidate と RawArtifact から、EvidenceI
 - 契約・入札、予算・決算、監査、政治資金、会議録・議案の source family ごとに `jurisdiction_id`, `source_system`, `source_family`, `connector_id` が定義される。
 - 電子調達検索 UI、政治資金 PDF、会議録検索は live acquisition 条件と fixture strategy を分けて記録される。
 
+### 実装結果
+
+- branch: `codex/opl-ingest-subsidy-connector-design-20260705/G2PR-007-source-connectors`
+- base: `c984c86995153f4103d816f59a44208bb240e67a`
+- worker head: `06b52e1aac2a0d088377669c6ef14fabbe6e8a5b`
+- coordinator head after cherry-pick: `b86e78f`
+- review range: `c984c86995153f4103d816f59a44208bb240e67a..06b52e1aac2a0d088377669c6ef14fabbe6e8a5b`
+- 実装レビュー: 承認済み。独立レビューで Critical / Important / Minor なし。
+- 実装内容: [Tokyo Source Connector Design](tokyo-source-connector-design.md) を追加し、`tokyo_procurement`、`tokyo_budget_settlement`、`tokyo_audit_reports`、`tokyo_political_funds`、`tokyo_assembly_records_bills` の `jurisdiction_id`、`source_system`、`source_family`、`connector_id`、fixture strategy、live acquisition conditions、non-goals、parse / OCR uncertainties、後続 implementation issue を整理した。
+- verification: `git diff --check` は passed。
+- 残リスク: live source 取得、PDF download、OCR 実行、検索 UI 挙動、PDF layout、安定 URL、利用条件は non-goal のため未検証。connector / parser / DB / API / UI 実装は未実施。
+
 ## リモート方針
 
 GitHub Issue mirror は未作成。現時点では local issue ledger を canonical とし、GitHub issue 作成は行わない。
@@ -272,13 +284,14 @@ PR 作成は Remote Gate 承認後に実施済み。remote `main` と `codex/ing
 ## Issue Gate で確認すること
 
 - `G2PR-001` から `G2PR-003` を初回 PR の実装対象にしてよいか。
-- `G2PR-004` から `G2PR-007` を後続深掘り issue として `ブロック中` のまま残してよいか。
+- `G2PR-004` から `G2PR-007` を後続深掘り issue として残し、実行時に完了状態を ledger へ記録すること。
 - blocker graph に cycle がないこと。
 - GitHub Issue mirror を行わず local ledger を canonical とすること。
 
 ## 関連ページ
 
 - [Tokyo Subsidy Ingest Spec](tokyo-subsidy-ingest-spec.md) — 承認済み Spec Gate。
+- [Tokyo Source Connector Design](tokyo-source-connector-design.md) — `G2PR-007` の source family connector 設計。
 - [Data Sources](../../data-sources.md) — source family と connector contract。
 - [Service Layout](../../service-layout.md) — service 境界。
 

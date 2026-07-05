@@ -157,3 +157,16 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - OCR 要否、parser approach、table extraction、confidence policy、parse warning policy、後続 implementation issue を記録。
 - review 指摘に従い、政治資金、契約・入札、会議録・議案の OCR 判定を「未検証」と「初期対象では不要」に分けて明確化。
 - verification は `git diff --check` passed。
+
+## [2026-07-05] execution-plan | Draft G2PR-007 connector design packet
+
+- `tokyo-subsidy-ingest-followup-connector-design-input-packet.json`, `tokyo-subsidy-ingest-followup-connector-design-execution-envelope.json`, `tokyo-subsidy-ingest-followup-connector-design-execution-handoff.md` を追加。
+- `G2PR-007` を docs-first の connector design issue とし、契約・入札、予算・決算、監査、政治資金、会議録・議案の source family registry を固定する scope に限定した。
+- live source 取得、browser automation、PDF download、OCR 実行、connector / parser / DB / API / UI 実装、GitHub Issue mirror は非対象として残した。
+
+## [2026-07-05] implementation | G2PR-007 source connector design
+
+- `G2PR-007` の worker 実装を review gate に通し、worker head `06b52e1aac2a0d088377669c6ef14fabbe6e8a5b` を `COMPLETE` として記録。
+- `wiki/syntheses/tokyo-source-connector-design.md` を追加し、`tokyo_procurement`、`tokyo_budget_settlement`、`tokyo_audit_reports`、`tokyo_political_funds`、`tokyo_assembly_records_bills` の registry、fixture strategy、live acquisition conditions、non-goals、parse / OCR uncertainties、後続 implementation issue を整理。
+- jurisdiction 分離により、東京都固有の allowlist、rate limit、terms note、fixture、output path を future national / Yokohama / Osaka / other municipality connector へ漏らさない方針を明記。
+- verification は `git diff --check` passed。独立レビューで Critical / Important / Minor なし。
