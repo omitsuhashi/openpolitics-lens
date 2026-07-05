@@ -90,4 +90,4 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 ## [2026-07-05] execution-plan | Update execution envelope base
 
-- packet/evidence boundary commit `c968b79452761b133259ccda16b92e3dfaaed062` を `epic_base.sha` として execution envelope revision 2 に更新。
+- packet/evidence boundary commit `c968b79c9c5da1cd66b82eb8290ab42bb2a924a4` を `epic_base.sha` として execution envelope revision 3 に更新。

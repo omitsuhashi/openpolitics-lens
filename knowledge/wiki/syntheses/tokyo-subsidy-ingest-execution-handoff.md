@@ -64,8 +64,8 @@ PR delivery は Remote Gate で扱う。最終 PR merge は常に human-only。
 - `check_capabilities.py --input knowledge/wiki/syntheses/tokyo-subsidy-ingest-input-packet.json --repo . --json`: ok
 - `reconcile_git_state.py knowledge/wiki/syntheses/tokyo-subsidy-ingest-execution-envelope.json --repo . --json`: ok, collisions none
 - `git diff --check`: ok
-- Execution envelope revision: `2`
-- `epic_base.sha`: `c968b79452761b133259ccda16b92e3dfaaed062`
+- Execution envelope revision: `3`
+- `epic_base.sha`: `c968b79c9c5da1cd66b82eb8290ab42bb2a924a4`
 
 Observed remote state:
 
