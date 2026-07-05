@@ -80,3 +80,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - `OPL-INGEST-SUBSIDY-20260705` の Issue Gate を承認済みに更新。
 - `G2PR-001` から `G2PR-003` を初回 PR の実装対象、`G2PR-004` から `G2PR-007` を後続深掘り issue として承認。
+
+## [2026-07-05] execution-plan | Draft Tokyo subsidy ingest packet
+
+- `tokyo-subsidy-ingest-input-packet.json`, `tokyo-subsidy-ingest-execution-envelope.json`, `tokyo-subsidy-ingest-execution-handoff.md` を追加。
+- 実行対象を `G2PR-001` から `G2PR-003` に限定し、execution envelope は `local_only` とした。
+- remote `origin` は存在するが `gh` token invalid のため、push、GitHub Issue 作成、PR 作成は Remote Gate に残す。
+- input packet、execution envelope、capability preflight、git reservation reconcile、`git diff --check` が通過。

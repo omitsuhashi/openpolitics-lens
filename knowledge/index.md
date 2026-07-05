@@ -68,6 +68,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: ingest, subsidy, grants, Tokyo, jurisdiction, connector, filesystem, manifest, Source Document Candidate, 補助金, 助成金, 取得仕様
 - [Tokyo Subsidy Ingest Issues](wiki/syntheses/tokyo-subsidy-ingest-issues.md) — 東京都補助金・助成金 ingest の local issue ledger と blocker graph。
   検索語: ingest, issue ledger, blocker graph, G2PR, subsidy, grants, jurisdiction, イシュー, 実装計画, 補助金, 助成金
+- [Tokyo Subsidy Ingest Execution Handoff](wiki/syntheses/tokyo-subsidy-ingest-execution-handoff.md) — approved packet と execution envelope への実行ハンドオフ。
+  検索語: ingest, execution packet, execution envelope, handoff, worker, local_only, 実行計画, ハンドオフ
 
 ### Sources
 

@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/2cb6/openpolitics-lens",
+  "epic_id": "opl-ingest-subsidy-20260705",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:1eaa06933809a1a00a3edbcb56d8369b6b3b160a3e8a83db8443f79d0a60076f"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-001",
+      "title": "Jurisdiction Profile と ingest contract / filesystem output の土台を作る",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "services/ingest を import 可能な Python package にする",
+        "JurisdictionProfile, SourceFamily, ConnectorDefinition, DiscoveryRecord, FetchManifestRecord, SourceDocumentCandidate 相当の型を定義する",
+        "manifest に jurisdiction_id, source_system, source_family, connector_id を含める",
+        "同一 content から同じ sha256 と output path が得られる",
+        "jurisdiction_id と source_family を入れ替えると output path が分離される",
+        "services/ingest/out/ が git 管理対象外になる"
+      ],
+      "non_goals": [
+        "東京都助成・補助金 connector の HTML 抽出は G2PR-002 で扱う",
+        "CLI と README の完成は G2PR-003 で扱う",
+        "PostgreSQL / MinIO 永続化は G2PR-004 以降で扱う",
+        "EvidenceItem, EvidenceClaim, 正規化 fact は生成しない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:.gitignore",
+        "path:services/ingest",
+        "path:services/tests",
+        "path:services/pyproject.toml"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "G2PR-002",
+      "title": "都庁助成・補助金 connector の fixture discovery/fetch を実装する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "connector は jurisdiction_id=jp-tokyo, source_family=tokyo_metro_grants, connector_id=jp_tokyo.metro_grants.v1 を使う",
+        "fixture HTML から教育・子育て関連 candidate URL を deterministic に抽出する",
+        "keyword / allowlist は connector local config に閉じる",
+        "fake fetcher で RawArtifact と fetch manifest を生成する",
+        "source_document_candidate が fetch manifest に含まれる",
+        "通常 test は外部 network に出ない"
+      ],
+      "non_goals": [
+        "live fetch の実行を通常 test に含めない",
+        "PDF/OCR、表抽出、添付ファイル解析は行わない",
+        "制度評価や SpendingReviewSignal 生成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/tests"
+      ],
+      "dependencies": [
+        {
+          "issue": "G2PR-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    {
+      "id": "G2PR-003",
+      "title": "CLI と README を整備し、fixture 検証を通す",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "fixture 入力と output directory を受け取る CLI を追加する",
+        "live fetch は明示 option にし、通常 command と test では使わない",
+        "README に ingest/normalize 境界、Jurisdiction Profile、output layout、検証 command を書く",
+        "CLI の fixture mode が local file だけで動く",
+        "generated output は git 管理されない"
+      ],
+      "non_goals": [
+        "remote write、GitHub Issue mirror、PR 作成は行わない",
+        "PostgreSQL / MinIO 永続化は行わない",
+        "EvidenceItem, EvidenceClaim, 正規化 fact は生成しない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/tests",
+        "path:services/pyproject.toml"
+      ],
+      "dependencies": [
+        {
+          "issue": "G2PR-002",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    }
+  ],
+  "delivery_intent": "local_only"
+}

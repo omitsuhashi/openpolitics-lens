@@ -202,7 +202,7 @@ ingest が作った Source Document Candidate と RawArtifact から、EvidenceI
 
 GitHub Issue mirror は未作成。現時点では local issue ledger を canonical とし、GitHub issue 作成は行わない。
 
-PR 作成は Remote Gate で扱う。`gh` CLI は利用可能だが、現 token は invalid で、remote は未設定である。
+PR 作成は Remote Gate で扱う。`gh` CLI は利用可能だが、現 token は invalid。remote `origin` は `git@github.com:omitsuhashi/openpolitics-lens.git` として存在する。
 
 ## Issue Gate で確認すること
 
