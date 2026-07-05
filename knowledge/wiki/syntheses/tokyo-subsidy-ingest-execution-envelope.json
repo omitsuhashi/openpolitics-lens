@@ -1,10 +1,10 @@
 {
   "schema_version": 2,
   "epic_id": "opl-ingest-subsidy-20260705",
-  "revision": 1,
+  "revision": 2,
   "epic_base": {
     "ref": "codex/opl-ingest-subsidy-20260705/epic-base",
-    "sha": "4d46f960bf545005ebeacff39669ad7c9ef09d8d",
+    "sha": "c968b79452761b133259ccda16b92e3dfaaed062",
     "branch_state": "create_on_run"
   },
   "execution_policy": {

@@ -87,3 +87,7 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 実行対象を `G2PR-001` から `G2PR-003` に限定し、execution envelope は `local_only` とした。
 - remote `origin` は存在するが `gh` token invalid のため、push、GitHub Issue 作成、PR 作成は Remote Gate に残す。
 - input packet、execution envelope、capability preflight、git reservation reconcile、`git diff --check` が通過。
+
+## [2026-07-05] execution-plan | Update execution envelope base
+
+- packet/evidence boundary commit `c968b79452761b133259ccda16b92e3dfaaed062` を `epic_base.sha` として execution envelope revision 2 に更新。

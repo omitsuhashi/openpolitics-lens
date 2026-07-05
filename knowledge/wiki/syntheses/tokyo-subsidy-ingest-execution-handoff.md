@@ -3,7 +3,7 @@ kind: synthesis
 created: 2026-07-05
 updated: 2026-07-05
 epic_id: OPL-INGEST-SUBSIDY-20260705
-status: execution-plan-preflight-passed
+status: execution-plan-ready
 ---
 
 # 東京都補助金・助成金 ingest 実行ハンドオフ
@@ -64,6 +64,8 @@ PR delivery は Remote Gate で扱う。最終 PR merge は常に human-only。
 - `check_capabilities.py --input knowledge/wiki/syntheses/tokyo-subsidy-ingest-input-packet.json --repo . --json`: ok
 - `reconcile_git_state.py knowledge/wiki/syntheses/tokyo-subsidy-ingest-execution-envelope.json --repo . --json`: ok, collisions none
 - `git diff --check`: ok
+- Execution envelope revision: `2`
+- `epic_base.sha`: `c968b79452761b133259ccda16b92e3dfaaed062`
 
 Observed remote state:
 
