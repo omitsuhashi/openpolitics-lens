@@ -74,6 +74,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: ingest, persistence, PostgreSQL, MinIO, RawArtifact, migration, G2PR-004, 永続化, 実行計画
 - [Tokyo Subsidy Ingest Follow-up Normalize Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-normalize-execution-handoff.md) — `G2PR-005` の EvidenceItem / EvidenceClaim normalize contract 実行ハンドオフ。
   検索語: ingest, normalize, EvidenceItem, EvidenceClaim, SourceDocument, G2PR-005, 正規化, 実行計画
+- [Tokyo Subsidy Ingest Follow-up PDF/OCR Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-pdf-ocr-execution-handoff.md) — `G2PR-006` の PDF/OCR と表抽出 feasibility 実行ハンドオフ。
+  検索語: ingest, PDF, OCR, table extraction, feasibility, G2PR-006, 表抽出, 実行計画
 
 ### Sources
 

@@ -143,3 +143,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `packages/db` に `source_documents`, `evidence_items`, `evidence_claims` の migration SQL を追加。
 - review 指摘に従い、`raw_artifact_id` の normalize contract 反映、observed title semantics、source type / media type validation、quote text と normalized text の分離、non-goal boundary test を強化。
 - verification は `uv run pytest -q` 39 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。
+
+## [2026-07-05] execution-plan | Draft G2PR-006 PDF/OCR feasibility packet
+
+- `tokyo-subsidy-ingest-followup-pdf-ocr-input-packet.json`, `tokyo-subsidy-ingest-followup-pdf-ocr-execution-envelope.json`, `tokyo-subsidy-ingest-followup-pdf-ocr-execution-handoff.md` を追加。
+- `G2PR-006` を docs-first の feasibility issue とし、source family 別に OCR 要否、表抽出、confidence、parse warning 方針を記録する scope に限定した。
+- PDF/OCR engine、parser 実装、live source 取得、意味解釈、DB migration、API、Web UI は非対象として残した。
