@@ -120,3 +120,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `tokyo-subsidy-ingest-followup-persistence-input-packet.json`, `tokyo-subsidy-ingest-followup-persistence-execution-envelope.json`, `tokyo-subsidy-ingest-followup-persistence-execution-handoff.md` を追加。
 - 初回 PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) の head を土台に、`G2PR-004` を後続 issue の最初の実行対象にした。
 - live PostgreSQL / MinIO 接続ではなく、migration SQL、object storage key contract、fake writer、DB row payload 生成の contract 固定に scope を限定した。
+
+## [2026-07-05] implementation | G2PR-004 ingest persistence contract
+
+- `G2PR-004` の worker 実装を review gate に通し、worker head `406f65cdc3a78782b37ac1974e9eb67dcb39a9c9` を `COMPLETE` として記録。
+- `packages/db` に `raw_artifacts` と `source_document_candidates` の migration SQL を追加し、`raw/{jurisdiction_id}/{source_family}/{yyyy}/{mm}/{sha256}.{ext}` の object key contract を固定。
+- `services/ingest` に S3 / MinIO 互換 object storage writer contract と `FetchManifestRecord` から DB row payload を作る helper を追加。
+- review 指摘に従い、candidate と raw artifact の invariant、object metadata reserved key の case-insensitive collision check、SQL text inspection を強化。
+- verification は `uv run pytest -q` 26 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。
