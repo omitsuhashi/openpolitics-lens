@@ -135,3 +135,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `G2PR-004` 完了後の head を土台に、`G2PR-005` を次の後続 issue として実行対象にした。
 - 初期 normalize は SourceDocument / EvidenceItem / EvidenceClaim の最小 contract と grant program page title の観測 claim に限定した。
 - SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal、entity resolution、PDF/OCR、live PostgreSQL / MinIO は非対象として残した。
+
+## [2026-07-05] implementation | G2PR-005 normalize evidence contract
+
+- `G2PR-005` の worker 実装を review gate に通し、worker head `c4402becf6bf6f2c2adcfd3cbbbc59a6ee3dc06e` を `COMPLETE` として記録。
+- `services/normalize` に SourceDocument、EvidenceItem、EvidenceClaim、NormalizeResult の最小 contract と grant program page HTML title normalizer を追加。
+- `packages/db` に `source_documents`, `evidence_items`, `evidence_claims` の migration SQL を追加。
+- review 指摘に従い、`raw_artifact_id` の normalize contract 反映、observed title semantics、source type / media type validation、quote text と normalized text の分離、non-goal boundary test を強化。
+- verification は `uv run pytest -q` 39 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。

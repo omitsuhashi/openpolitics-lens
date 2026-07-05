@@ -21,7 +21,7 @@ spec: tokyo-subsidy-ingest-spec.md
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-002 | 都庁助成・補助金 connector の fixture discovery/fetch を実装する | 承認済み | PR_READY | G2PR-001 | G2PR-003, G2PR-005, G2PR-006, G2PR-007 | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-003 | CLI と README を整備し、fixture 検証を通す | 承認済み | PR_READY | G2PR-002 | なし | 未作成 | 承認済み | [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-004 | PostgreSQL / MinIO 永続化を設計・実装する | 承認済み | COMPLETE | G2PR-001 | なし | 未作成 | 承認済み | 未作成 |
-| OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
+| OPL-INGEST-SUBSIDY-20260705 | G2PR-005 | normalize で EvidenceItem / EvidenceClaim 生成を実装する | 承認済み | COMPLETE | G2PR-002 | なし | 未作成 | 承認済み | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-006 | PDF/OCR と表抽出の source family 別 feasibility を行う | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-INGEST-SUBSIDY-20260705 | G2PR-007 | 契約・入札、予算・決算、監査、政治資金、会議録 source を後続 connector として設計する | 承認済み | ブロック中 | G2PR-002 | なし | 未作成 | 未実施 | 未作成 |
 
@@ -39,7 +39,7 @@ G2PR-001
 
 cycle はない。Issue Gate 承認後、`G2PR-001` だけが直ちに実行可能で、`G2PR-002` 以降は依存 issue の完了後に実行可能になる。
 
-`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` は後続 issue として local 実装・レビューまで完了した。`G2PR-005` 以降は、normalize、PDF/OCR、他 source connector の別 scope として `ブロック中` のまま残す。
+`G2PR-001` から `G2PR-003` は実装レビュー承認済みで、初回 PR 実装範囲は draft PR [#1](https://github.com/omitsuhashi/openpolitics-lens/pull/1) として作成済み。`G2PR-004` と `G2PR-005` は後続 issue として local 実装・レビューまで完了した。`G2PR-006` 以降は、PDF/OCR feasibility と他 source connector 設計の別 scope として `ブロック中` のまま残す。
 
 ## 初回 PR 実装範囲
 
@@ -208,6 +208,18 @@ ingest が作った Source Document Candidate と RawArtifact から、EvidenceI
 - `SourceDocument` への昇格 rule が明示される。
 - `EvidenceItem` は source span と `raw_artifact_path` へ戻れる。
 - `EvidenceClaim` は直接言える最小 claim に限定される。
+
+### 実装結果
+
+- branch: `codex/opl-ingest-subsidy-normalize-20260705/G2PR-005-normalize-evidence`
+- base: `202ddba14bebc09c07f8a6a9ad9f60bc8c0455b1`
+- worker head: `c4402becf6bf6f2c2adcfd3cbbbc59a6ee3dc06e`
+- coordinator head after cherry-pick: `a5a8e66`
+- review range: `202ddba14bebc09c07f8a6a9ad9f60bc8c0455b1..c4402becf6bf6f2c2adcfd3cbbbc59a6ee3dc06e`
+- 実装レビュー: 承認済み。初回レビューで `raw_artifact_id` 欠落、title semantics、source type / media type validation、quote/normalized text 分離、non-goal 境界 test を修正した。再レビューで Critical / Important / Minor なし。
+- 実装内容: `services/normalize` の SourceDocument / EvidenceItem / EvidenceClaim / NormalizeResult contract、grant program page HTML title の EvidenceItem と title 観測 EvidenceClaim 生成、`source_documents` / `evidence_items` / `evidence_claims` migration SQL を追加した。
+- verification: `uv run pytest -q` は 39 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: live PostgreSQL / MinIO 接続、migration apply、PDF/OCR、entity resolution、SubsidyProgram / PublicMoneyFlow / SpendingReviewSignal 生成は non-goal のため未実施。
 
 ## G2PR-006: PDF/OCR と表抽出の source family 別 feasibility を行う
 
