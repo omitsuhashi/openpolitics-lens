@@ -35,8 +35,14 @@ def _fetch_manifest_record() -> ingest.FetchManifestRecord:
     )
 
 
+def _raw_artifact_id(record: ingest.FetchManifestRecord) -> str:
+    rows = ingest.build_fetch_manifest_db_rows(record, object_bucket="ingest-raw")
+    return str(rows.raw_artifact["raw_artifact_id"])
+
+
 def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() -> None:
     record = _fetch_manifest_record()
+    raw_artifact_id = _raw_artifact_id(record)
     observed_title = "子育て応援助成制度｜東京都"
     raw_html = (
         "<!doctype html><html><head>"
@@ -44,18 +50,27 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
         "</head><body><h1>本文の制度名</h1></body></html>"
     ).encode()
 
-    result = normalize.normalize_grant_program_page(record, raw_html)
-    repeated = normalize.normalize_grant_program_page(record, raw_html)
+    result = normalize.normalize_grant_program_page(
+        record,
+        raw_html,
+        raw_artifact_id=raw_artifact_id,
+    )
+    repeated = normalize.normalize_grant_program_page(
+        record,
+        raw_html,
+        raw_artifact_id=raw_artifact_id,
+    )
 
     assert result.to_json_dict() == repeated.to_json_dict()
     json.dumps(result.to_json_dict(), ensure_ascii=False)
 
     assert result.source_document.to_json_dict() == {
         "source_document_id": result.source_document.source_document_id,
+        "raw_artifact_id": raw_artifact_id,
         "source_system": "tokyo_metropolitan_government",
         "source_type": "grant_program_page",
         "canonical_url": "https://www.metro.tokyo.lg.jp/example/grant.html",
-        "title": "子育て助成制度",
+        "title": observed_title,
         "published_at": None,
         "retrieved_at": "2026-07-05T09:01:00Z",
         "raw_artifact_path": record.raw_artifact_path,
@@ -102,6 +117,59 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
     }
 
 
+def test_normalize_keeps_quote_text_as_decoded_source_span_and_normalizes_title() -> None:
+    record = _fetch_manifest_record()
+    raw_title = "子育て&nbsp;\n応援助成制度"
+    normalized_title = "子育て 応援助成制度"
+    raw_html = f"<html><head><title>{raw_title}</title></head></html>".encode()
+
+    result = normalize.normalize_grant_program_page(
+        record,
+        raw_html,
+        raw_artifact_id=_raw_artifact_id(record),
+    )
+
+    evidence_item = result.evidence_items[0]
+    assert result.source_document.title == normalized_title
+    assert evidence_item.quote_text == raw_title
+    assert evidence_item.normalized_text == normalized_title
+    assert evidence_item.source_span_start == raw_html.index(raw_title.encode())
+    assert evidence_item.source_span_end == evidence_item.source_span_start + len(
+        raw_title.encode()
+    )
+    assert result.evidence_claims[0].object_value == normalized_title
+
+
+def test_normalize_does_not_infer_non_goal_claims_from_body_text() -> None:
+    record = _fetch_manifest_record()
+    observed_title = "子育て応援助成制度｜東京都"
+    raw_html = (
+        "<html><head>"
+        f"<title>{observed_title}</title>"
+        "</head><body>"
+        "<p>交付先: 株式会社サンプル</p>"
+        "<p>100万円を助成します。</p>"
+        "<p>監査指摘: 支出確認が必要です。</p>"
+        "</body></html>"
+    ).encode()
+
+    result = normalize.normalize_grant_program_page(
+        record,
+        raw_html,
+        raw_artifact_id=_raw_artifact_id(record),
+    )
+
+    assert len(result.evidence_items) == 1
+    assert len(result.evidence_claims) == 1
+    claim = result.evidence_claims[0]
+    assert claim.claim_type == "grant_program_page_title_observed"
+    assert claim.object_value == observed_title
+    assert claim.amount is None
+    assert claim.currency is None
+    assert claim.event_date is None
+    assert claim.object_ref is None
+
+
 @pytest.mark.parametrize(
     ("field_name", "replacement_value"),
     [
@@ -126,4 +194,35 @@ def test_normalize_rejects_candidate_invariant_mismatches(
         normalize.normalize_grant_program_page(
             mismatched_record,
             "<html><head><title>子育て応援助成制度</title></head></html>".encode(),
+            raw_artifact_id=_raw_artifact_id(record),
+        )
+
+
+def test_normalize_rejects_non_grant_program_source_type() -> None:
+    record = _fetch_manifest_record()
+    mismatched_record = replace(
+        record,
+        source_document_candidate=replace(
+            record.source_document_candidate,
+            source_type="spending_review_page",
+        ),
+    )
+
+    with pytest.raises(ValueError, match="source_type"):
+        normalize.normalize_grant_program_page(
+            mismatched_record,
+            "<html><head><title>子育て応援助成制度</title></head></html>".encode(),
+            raw_artifact_id=_raw_artifact_id(record),
+        )
+
+
+@pytest.mark.parametrize("media_type", ["application/pdf", "text/plain", "application/json"])
+def test_normalize_rejects_non_html_media_type(media_type: str) -> None:
+    record = replace(_fetch_manifest_record(), media_type=media_type)
+
+    with pytest.raises(ValueError, match="media_type"):
+        normalize.normalize_grant_program_page(
+            record,
+            "<html><head><title>子育て応援助成制度</title></head></html>".encode(),
+            raw_artifact_id=_raw_artifact_id(record),
         )

@@ -17,6 +17,7 @@ def _date_to_json(value: date) -> str:
 @dataclass(frozen=True, slots=True)
 class SourceDocument:
     source_document_id: str
+    raw_artifact_id: str
     source_system: str
     source_type: str
     canonical_url: str
@@ -34,6 +35,7 @@ class SourceDocument:
     def to_json_dict(self) -> JsonDict:
         return {
             "source_document_id": self.source_document_id,
+            "raw_artifact_id": self.raw_artifact_id,
             "source_system": self.source_system,
             "source_type": self.source_type,
             "canonical_url": self.canonical_url,
@@ -54,6 +56,12 @@ class SourceDocument:
 
 @dataclass(frozen=True, slots=True)
 class EvidenceItem:
+    """Evidence span within the raw artifact.
+
+    source_span_start and source_span_end are byte offsets in the raw HTML bytes.
+    quote_text is the decoded raw span text; normalized_text is cleaned for claims.
+    """
+
     evidence_item_id: str
     source_document_id: str
     location_type: str

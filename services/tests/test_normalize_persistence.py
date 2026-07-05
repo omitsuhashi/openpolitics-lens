@@ -18,9 +18,11 @@ def test_normalize_evidence_migration_declares_source_documents_and_evidence_tab
     assert "references source_documents" in sql
     assert "references evidence_items" in sql
     assert "raw_artifact_path" in sql
+    assert "raw_artifact_id uuid not null" in sql
     assert "content_hash" in sql
     assert "source_span_start" in sql
     assert "source_span_end" in sql
+    assert "raw html bytes offset" in sql
     assert "extraction_method" in sql
     assert "confidence" in sql
     assert "grant_program_page_title_observed" in sql

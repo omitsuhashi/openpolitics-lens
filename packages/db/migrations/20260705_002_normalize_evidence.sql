@@ -27,6 +27,8 @@ create index if not exists source_documents_source_family_idx
 
 comment on table source_documents is
     'Normalized public source documents promoted from ingest source document candidates.';
+comment on column source_documents.raw_artifact_id is
+    'Deterministic ingest raw_artifacts identifier supplied by the normalize caller.';
 comment on column source_documents.source_reliability is
     'Initial reliability label for official source pages.';
 
@@ -61,6 +63,10 @@ create index if not exists evidence_items_source_document_idx
 
 comment on table evidence_items is
     'Machine-extracted source spans that support directly observable claims.';
+comment on column evidence_items.source_span_start is
+    'Inclusive raw HTML bytes offset for the beginning of quote_text.';
+comment on column evidence_items.source_span_end is
+    'Exclusive raw HTML bytes offset for the end of quote_text.';
 comment on column evidence_items.raw_artifact_path is
     'Back-reference to the immutable raw artifact path used for source inspection.';
 
