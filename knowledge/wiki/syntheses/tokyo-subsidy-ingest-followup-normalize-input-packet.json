@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/2cb6/openpolitics-lens",
+  "epic_id": "opl-ingest-subsidy-normalize-20260705",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:1eaa06933809a1a00a3edbcb56d8369b6b3b160a3e8a83db8443f79d0a60076f"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-005",
+      "title": "normalize で EvidenceItem / EvidenceClaim 生成を実装する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "services/normalize に import 可能な Python package を追加する",
+        "SourceDocument、EvidenceItem、EvidenceClaim、NormalizeResult の最小 contract を dataclass と JSON serialization で定義する",
+        "FetchManifestRecord と SourceDocumentCandidate から SourceDocument を deterministic に昇格できる",
+        "HTML bytes から EvidenceItem を生成し、source span、raw_artifact_path、extraction_method、confidence を保持できる",
+        "EvidenceClaim は source から直接言える最小 claim に限定し、初期実装では grant program page title の観測 claim だけを生成する",
+        "packages/db に source_documents、evidence_items、evidence_claims 相当の migration SQL を追加する",
+        "unit test は fixture/fake record と SQL text inspection だけを使い、live PostgreSQL / MinIO や外部 network に接続しない"
+      ],
+      "non_goals": [
+        "SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal、AuditFinding は生成しない",
+        "補助金額、交付先、成果指標、監査指摘の意味解釈は行わない",
+        "人物・団体・法人の entity resolution は行わない",
+        "PDF/OCR、表抽出、添付ファイル解析は行わない",
+        "live PostgreSQL / MinIO 接続、migration 適用、bucket 作成、secret 操作は行わない",
+        "Web UI / API 表示は扱わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:packages/db",
+        "path:services/normalize",
+        "path:services/tests",
+        "path:services/pyproject.toml"
+      ],
+      "dependencies": []
+    }
+  ],
+  "delivery_intent": "local_only"
+}

@@ -128,3 +128,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `services/ingest` に S3 / MinIO 互換 object storage writer contract と `FetchManifestRecord` から DB row payload を作る helper を追加。
 - review 指摘に従い、candidate と raw artifact の invariant、object metadata reserved key の case-insensitive collision check、SQL text inspection を強化。
 - verification は `uv run pytest -q` 26 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。
+
+## [2026-07-05] execution-plan | Draft G2PR-005 normalize packet
+
+- `tokyo-subsidy-ingest-followup-normalize-input-packet.json`, `tokyo-subsidy-ingest-followup-normalize-execution-envelope.json`, `tokyo-subsidy-ingest-followup-normalize-execution-handoff.md` を追加。
+- `G2PR-004` 完了後の head を土台に、`G2PR-005` を次の後続 issue として実行対象にした。
+- 初期 normalize は SourceDocument / EvidenceItem / EvidenceClaim の最小 contract と grant program page title の観測 claim に限定した。
+- SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal、entity resolution、PDF/OCR、live PostgreSQL / MinIO は非対象として残した。
