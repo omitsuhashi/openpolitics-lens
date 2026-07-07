@@ -14,6 +14,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### データ取得方針を確認する
 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
+- [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都補助金・助成金 first の ingest 初期仕様と後続 issue 方針。
+- [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の契約・入札、予算・決算、監査、政治資金、会議録・議案 connector 設計。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
 - [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source family の追加確認。
 
@@ -63,6 +65,24 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: legal, risk, correction, citation, defamation, 法務, 訂正, 出典
 - [Roadmap](roadmap.md) — MVP、自治体選定、拡張順序、検証 gate をまとめる。
   検索語: roadmap, MVP, Tokyo, rollout, 自治体選定, 導入計画
+- [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都の補助金・助成金 source を jurisdiction 分離と filesystem-first で ingest する初期仕様。
+  検索語: ingest, subsidy, grants, Tokyo, jurisdiction, connector, filesystem, manifest, Source Document Candidate, 補助金, 助成金, 取得仕様
+- [Tokyo Subsidy Ingest Issues](wiki/syntheses/tokyo-subsidy-ingest-issues.md) — 東京都補助金・助成金 ingest の local issue ledger と blocker graph。
+  検索語: ingest, issue ledger, blocker graph, G2PR, subsidy, grants, jurisdiction, イシュー, 実装計画, 補助金, 助成金
+- [Tokyo Subsidy PDF/OCR Feasibility](wiki/syntheses/tokyo-subsidy-pdf-ocr-feasibility.md) — PDF/OCR と表抽出の source family 別 feasibility、confidence、parse warning 方針。
+  検索語: PDF, OCR, table extraction, confidence, parse warning, source family, G2PR-006, 表抽出, OCR方針
+- [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の後続 source family connector registry と fixture / live acquisition 分離方針。
+  検索語: connector, source family, procurement, budget, audit, political funds, assembly records, jurisdiction, G2PR-007, 契約, 入札, 予算, 決算, 監査, 政治資金, 会議録
+- [Tokyo Subsidy Ingest Execution Handoff](wiki/syntheses/tokyo-subsidy-ingest-execution-handoff.md) — approved packet と execution envelope への実行ハンドオフ。
+  検索語: ingest, execution packet, execution envelope, handoff, worker, local_only, 実行計画, ハンドオフ
+- [Tokyo Subsidy Ingest Follow-up Persistence Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-persistence-execution-handoff.md) — `G2PR-004` の永続化 contract 実行ハンドオフ。
+  検索語: ingest, persistence, PostgreSQL, MinIO, RawArtifact, migration, G2PR-004, 永続化, 実行計画
+- [Tokyo Subsidy Ingest Follow-up Normalize Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-normalize-execution-handoff.md) — `G2PR-005` の EvidenceItem / EvidenceClaim normalize contract 実行ハンドオフ。
+  検索語: ingest, normalize, EvidenceItem, EvidenceClaim, SourceDocument, G2PR-005, 正規化, 実行計画
+- [Tokyo Subsidy Ingest Follow-up PDF/OCR Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-pdf-ocr-execution-handoff.md) — `G2PR-006` の PDF/OCR と表抽出 feasibility 実行ハンドオフ。
+  検索語: ingest, PDF, OCR, table extraction, feasibility, G2PR-006, 表抽出, 実行計画
+- [Tokyo Subsidy Ingest Follow-up Connector Design Handoff](wiki/syntheses/tokyo-subsidy-ingest-followup-connector-design-execution-handoff.md) — `G2PR-007` の source connector design 実行ハンドオフ。
+  検索語: ingest, connector design, source family, G2PR-007, fixture, live acquisition, 実行計画, ハンドオフ
 
 ### Sources
 

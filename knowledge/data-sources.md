@@ -246,16 +246,19 @@ URLs:
 
 ## Acquisition Design
 
-取得は 3 段階に分ける。
+取得と構造化は、ingest 側の `discover -> fetch -> candidate` と、normalize 側の `parse` に分ける。
 
 1. `discover`
    - Source Family ごとの index page、年度 page、定例会 page、検索入口から candidate URL を集める。
-   - 保存するもの: `source_system`, `source_family`, `canonical_url`, `discovered_at`, `parent_url`, `source_period`, `candidate_type`。
+   - 保存するもの: `jurisdiction_id`, `source_system`, `source_family`, `connector_id`, `canonical_url`, `discovered_at`, `parent_url`, `source_period`, `candidate_type`。
 2. `fetch`
    - HTML、PDF、CSV、JSON、XML を RawArtifact として不変保存する。
-   - 保存するもの: `fetched_at`, `http_status`, `content_hash`, `etag`, `last_modified`, `media_type`, `byte_size`, `connector_version`, `rate_limit_policy`, `terms_note`。
-3. `parse`
-   - RawArtifact から SourceDocument、EvidenceItem、EvidenceClaim、正規化済み entity/event を作る。
+   - 保存するもの: `jurisdiction_id`, `source_family`, `connector_id`, `fetched_at`, `http_status`, `content_hash`, `etag`, `last_modified`, `media_type`, `byte_size`, `connector_version`, `rate_limit_policy`, `terms_note`。
+3. `candidate`
+   - RawArtifact と取得 metadata から Source Document Candidate を作る。
+   - 保存するもの: `jurisdiction_id`, `canonical_url`, `title`, `source_type`, `source_family`, `language`, `retrieved_at`, `raw_artifact_uri`。
+4. normalize `parse`
+   - Source Document Candidate と RawArtifact から SourceDocument、EvidenceItem、EvidenceClaim、正規化済み entity/event を作る。
    - 保存するもの: `parser_version`, `location_type`, `location_value`, `quote_text`, `normalized_text`, `confidence`, `parse_warnings`。
 
 Source Family ごとの connector 型:
@@ -308,20 +311,23 @@ Source Family ごとの connector 型:
 
 各 connector は次の contract を満たす。
 
+- `jurisdiction_id`
+- `jurisdiction_level`
 - `source_system`
+- `source_family`
+- `connector_id`
 - `source_url`
+- `canonical_url`
 - `fetched_at`
 - `content_hash`
 - `connector_version`
 - `rate_limit_policy`
 - `terms_note`
 - `raw_artifact_uri`
-- `parser_version`
-- `parse_warnings`
+- `source_document_candidate`
 
 追加 contract:
 
-- `source_family`
 - `source_period`
 - `discovery_url`
 - `retrieval_method`
@@ -329,10 +335,13 @@ Source Family ごとの connector 型:
 - `evidence_granularity`
 - `manual_review_required`
 
+`jurisdiction_id` は国・自治体ごとの設定境界であり、`source_family` や `connector_id` と混ぜない。東京都、横浜市、大阪市、国会 source を増やす場合も、allowlist、rate limit、terms note、fixture、output path は jurisdiction ごとに分ける。
+
 ## 関連ページ
 
 - [Grand Design](architecture.md) — module 全体。
 - [Roadmap](roadmap.md) — 導入順序。
+- [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 補助金・助成金 first の ingest 初期仕様。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 公式 source の確認結果。
 - [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source の追加確認。
 - [Tokyo Data Source Design Query](wiki/queries/2026-07-05-tokyo-data-source-design.md) — 今回の設計検討の要約。

@@ -12,9 +12,17 @@ _Avoid_: 権力者, 黒幕, 関係者
 会議録、議案、採決結果、収支報告書、契約結果、予算書、選挙公報など、取得元と取得時点を特定できる公開資料。
 _Avoid_: データ, 情報, ネタ
 
+**Source Document Candidate**:
+ingest が Raw Artifact と取得 metadata から作る、Source Document 正本化前の候補。normalize が検証し、必要な抽出と review state を付けて Source Document へ昇格させる。
+_Avoid_: 確定資料, 仮 Evidence, 正規化済み資料
+
 **Source Family**:
 同じ公式運営主体と公開構造を持つ Source Document の集合。connector、取得間隔、parser、利用条件確認の単位になる。
 _Avoid_: データソース, URL一覧
+
+**Jurisdiction Profile**:
+国、都道府県、市区町村など、公開資料の管轄と政治・行政単位を表す設定。connector の allowlist、利用条件、source family、地域コードを混ぜないための境界になる。
+_Avoid_: 地域名文字列, 自治体カテゴリ, source prefix
 
 **Evidence Item**:
 画面表示、スコア、関係 edge の根拠になる Source Document 内の具体的な位置または引用範囲。

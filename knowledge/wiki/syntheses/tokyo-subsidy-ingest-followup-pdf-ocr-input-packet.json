@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/2cb6/openpolitics-lens",
+  "epic_id": "opl-ingest-subsidy-pdf-ocr-20260705",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:326d9533de2b6f929e0f7cf732080aa4d3388ec4e4c189c74ad6199436d46479"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-006",
+      "title": "PDF/OCR と表抽出の source family 別 feasibility を行う",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "knowledge/wiki/syntheses に PDF/OCR と表抽出の feasibility synthesis を追加する",
+        "補助金、政治資金、監査、契約・入札、予算・決算、会議録・議案の source family ごとに OCR 不要 / 必要 / 未検証を明記する",
+        "source family ごとに初期 parser approach、table extraction approach、confidence policy、parse warning policy を記録する",
+        "PDF/OCR 由来の金額・氏名・団体名には confidence と warning を必須にする方針を明記する",
+        "G2PR-005 の EvidenceItem / EvidenceClaim contract と整合し、normalize が source span と raw_artifact_path へ戻れる前提を保つ",
+        "実装や live fetch は行わず、後続 implementation issue に分ける項目を明記する"
+      ],
+      "non_goals": [
+        "PDF/OCR engine、table extraction 実装、parser 実装は行わない",
+        "live source 取得、外部 network、PDF download、OCR 実行は行わない",
+        "金額、氏名、団体名、監査指摘、交付先の意味解釈は行わない",
+        "SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal、AuditFinding は生成しない",
+        "DB migration、API、Web UI は扱わない"
+      ],
+      "verification": [
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:knowledge/wiki/syntheses"
+      ],
+      "dependencies": []
+    }
+  ],
+  "delivery_intent": "local_only"
+}

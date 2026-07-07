@@ -1,0 +1,77 @@
+{
+  "schema_version": 2,
+  "epic_id": "opl-ingest-subsidy-pdf-ocr-20260705",
+  "revision": 1,
+  "epic_base": {
+    "ref": "codex/opl-ingest-subsidy-pdf-ocr-20260705/epic-base",
+    "sha": "9ef8853ebaff6f8467ea3bc077780c6496dad412",
+    "branch_state": "create_on_run"
+  },
+  "execution_policy": {
+    "parallel_preferred": false,
+    "serial_fallback_preapproved": true,
+    "worker_context_required": true,
+    "coordinator_may_implement": false,
+    "serial_fallback_mode": "worker_context_only",
+    "implementation_slots": 1,
+    "review_slots": 1,
+    "wave_is_barrier": false
+  },
+  "review_policy": {
+    "primary": "requesting-code-review",
+    "fallbacks": ["equivalent-independent-reviewer"],
+    "manual_fallback_preapproved": false,
+    "max_review_cycles": 2,
+    "max_fix_cycles": 2,
+    "same_finding_limit": 2,
+    "hardening_candidates": {
+      "candidate_registry_path": "decisions/hardening-candidates.json",
+      "max_candidates_per_issue": 5,
+      "max_summary_words": 80,
+      "issue_completion_blocking": false,
+      "ready_or_merge_requires_decisions": true,
+      "worker_packet_decision_state": "forbidden"
+    }
+  },
+  "human_policy": {
+    "default_scope": "issue",
+    "epic_scope_requires_reason": true
+  },
+  "context_policy": {
+    "paths_first": true,
+    "max_worker_packet_words": 450,
+    "max_worker_report_words": 350,
+    "include_full_spec_text": false,
+    "include_full_ledger_text": false,
+    "worker_packet_schema": "assets/schemas/worker-packet.schema.json",
+    "worker_packet_template": "assets/templates/worker-packet.json",
+    "worker_packet_validator": "scripts/validate_worker_packet.py",
+    "session_compaction": {
+      "soft_trigger_percent": 65,
+      "hard_stop_percent": 75,
+      "mandatory_handoff_compaction": 1,
+      "mandatory_phase_transition_gc": true,
+      "carry_forward_capsule_words_default": 400,
+      "carry_forward_capsule_words_hard": 600,
+      "inline_json_code_diff_lines_hard": 80
+    }
+  },
+  "remote_write_policy": {
+    "mode": "local_only",
+    "approved_actions": []
+  },
+  "work_items": {
+    "G2PR-006": {
+      "branch": "codex/opl-ingest-subsidy-pdf-ocr-20260705/G2PR-006-pdf-ocr-feasibility",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-ingest-subsidy-pdf-ocr-20260705/G2PR-006",
+      "worktree_state": "create_on_run",
+      "base_policy": {
+        "type": "epic_base"
+      },
+      "write_scope": [
+        "path:knowledge/wiki/syntheses"
+      ],
+      "dependencies": []
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/2cb6/openpolitics-lens",
+  "epic_id": "opl-ingest-subsidy-followups-20260705",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:326d9533de2b6f929e0f7cf732080aa4d3388ec4e4c189c74ad6199436d46479"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-004",
+      "title": "PostgreSQL / MinIO 永続化 contract を設計・実装する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "packages/db に ingest RawArtifact と Source Document Candidate の migration SQL を追加する",
+        "migration は raw_artifacts と source_document_candidates 相当の正本 table を含む",
+        "MinIO / S3 object key は raw/{jurisdiction_id}/{source_family}/{yyyy}/{mm}/{sha256}.{ext} に沿う",
+        "services/ingest に object storage writer contract を追加し、filesystem writer と同じ content hash/path contract を使う",
+        "services/ingest に FetchManifestRecord から DB row payload を作る helper を追加する",
+        "unit test は fake object storage と SQL text inspection だけを使い、PostgreSQL / MinIO live service に接続しない"
+      ],
+      "non_goals": [
+        "live PostgreSQL / MinIO への接続、migration 適用、bucket 作成は行わない",
+        "production credential、secret、外部 service、課金 service は扱わない",
+        "EvidenceItem / EvidenceClaim / normalize 実装は G2PR-005 で扱う",
+        "PDF/OCR、表抽出、他 source family connector は扱わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:packages/db",
+        "path:services/ingest",
+        "path:services/tests",
+        "path:services/pyproject.toml"
+      ],
+      "dependencies": []
+    }
+  ],
+  "delivery_intent": "local_only"
+}
