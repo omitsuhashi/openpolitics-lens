@@ -379,3 +379,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `AuditFindingCandidate` と `SpendingReviewSignalCandidate` を別 contract / table / claim type として定義し、app-calculated candidate を `public_visibility=internal_only`、score / severity 非保持、public `SpendingReviewSignal` 非生成として guard した。
 - verification は `uv run pytest -q` 71 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - live database migration apply は未実施。`P0R-012` を次の実行可能 issue とする。
+
+## [2026-07-07] execution-plan | Approve P0R-012 phase0 coverage report packet
+
+- `phase0-remainder-p0r-012-input-packet.json`、`phase0-remainder-p0r-012-execution-envelope.json`、`phase0-remainder-p0r-012-execution-handoff.md` を追加。
+- `P0R-011` head `e793c9e7f3290c742608d1f77bc144b609d4b65c` を blocker head base とし、`P0R-012` branch をそこから作る方針にした。
+- 実行対象は `python -m ingest phase0 fixture-report` と `phase0-source-probe-feasibility-report.md` に限定し、live source 取得、source probe 大規模再実装、public UI、production object storage は非対象に残した。
