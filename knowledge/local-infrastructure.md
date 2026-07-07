@@ -57,6 +57,17 @@ docker compose --env-file .env.local ps minio minio-init
 
 host 側 ingest command は `S3_ENDPOINT=http://localhost:9000` を使う。Compose network 内の service から接続する場合だけ `S3_INTERNAL_ENDPOINT=http://minio:9000` を使う。path-style access は local MinIO 互換性のため `S3_FORCE_PATH_STYLE=true` を固定する。
 
+RawArtifact storage smoke:
+
+```bash
+cd services
+uv run python -m ingest storage-smoke \
+  --bucket openpolitics-raw \
+  --endpoint http://localhost:9000
+```
+
+この smoke は `raw/{jurisdiction_id}/{source_family}/{yyyy}/{mm}/{sha256}.{ext}` に 1 artifact を put し、object metadata と RDB payload contract を照合する。endpoint は local MinIO 専用で、`localhost`、loopback IP、Compose service 名 `minio` 以外は PUT 前に拒否する。Docker / MinIO が起動していない場合は JSON の `status` を `skipped` として返す。strict に失敗扱いしたい手動 gate では `--require-available` を付ける。
+
 停止:
 
 ```bash

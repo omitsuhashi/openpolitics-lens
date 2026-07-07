@@ -1,14 +1,25 @@
+import json
 import re
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from html import unescape
+from html.parser import HTMLParser
 from uuid import NAMESPACE_URL, uuid5
 
 from ingest.contracts import FetchManifestRecord
+from ingest.tokyo_assembly_bills import TokyoAssemblyBillDecisionFixture
 from normalize.contracts import (
+    AUDIT_REPORT_SOURCE_TYPES,
+    AuditFindingCandidate,
+    ElectionCandidateObservation,
     EvidenceClaim,
     EvidenceItem,
+    JsonDict,
     NormalizeResult,
     SourceDocument,
+    build_audit_finding_candidate,
+    build_observed_claim,
+    validate_tokyo_election_claims_do_not_merge_entities,
 )
 
 
@@ -20,7 +31,116 @@ class _ExtractedTitle:
     source_span_end: int
 
 
-_TITLE_PATTERN = re.compile(rb"<title\b[^>]*>(?P<title>.*?)</title\s*>", re.IGNORECASE | re.DOTALL)
+@dataclass(frozen=True, slots=True)
+class _ExtractedSubsidyProgramCandidate:
+    quote_text: str
+    normalized_text: str
+    source_span_start: int
+    source_span_end: int
+    fields: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class _ExtractedAuditField:
+    field_name: str
+    quote_text: str
+    normalized_text: str
+    source_span_start: int
+    source_span_end: int
+
+
+@dataclass(frozen=True, slots=True)
+class _ExtractedAuditFinding:
+    source_type: str
+    fields: dict[str, _ExtractedAuditField]
+
+
+@dataclass(frozen=True, slots=True)
+class _ExtractedAssemblySpeech:
+    quote_text: str
+    normalized_text: str
+    source_span_start: int
+    source_span_end: int
+    location_metadata: JsonDict
+
+
+_TITLE_PATTERN = re.compile(
+    rb"<title\b[^>]*>(?P<title>.*?)</title\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_H1_PATTERN = re.compile(rb"<h1\b[^>]*>(?P<h1>.*?)</h1\s*>", re.IGNORECASE | re.DOTALL)
+_STABLE_SUBSIDY_PROGRAM_LABELS = ("所管局", "対象者", "申請期間")
+_AUDIT_FINDING_SECTION_PATTERN = re.compile(
+    rb'<section\b[^>]*class="audit-finding"[^>]*data-source-type="(?P<source_type>[^"]+)"'
+    rb"[^>]*>(?P<body>.*?)</section\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_METADATA_PATTERN = re.compile(
+    rb"<script\b(?=[^>]*\bid=[\"']assembly-speech-metadata[\"'])[^>]*>"
+    rb"(?P<metadata>.*?)"
+    rb"</script\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_SPEECH_PATTERN = re.compile(
+    rb"<p\b(?=[^>]*\bclass=[\"']speech-text[\"'])[^>]*>"
+    rb"(?P<speech>.*?)"
+    rb"</p\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_REQUIRED_LOCATION_METADATA_KEYS: tuple[str, ...] = (
+    "search_form_url",
+    "query_parameters",
+    "target_period",
+    "page_number",
+    "sort_order",
+    "snapshot_timestamp",
+    "result_row_locator",
+    "meeting_id",
+    "meeting_name",
+    "meeting_date",
+    "speaker_name",
+    "speaker_role",
+    "speech_block_id",
+    "speech_block_locator",
+)
+
+
+class _GrantDetailFieldParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.h1_text: str = ""
+        self.label_values: dict[str, str] = {}
+        self._active_tag: str | None = None
+        self._active_text: list[str] = []
+        self._pending_dt: str | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        del attrs
+        normalized_tag = tag.lower()
+        if normalized_tag in {"h1", "dt", "dd"}:
+            self._active_tag = normalized_tag
+            self._active_text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._active_tag is not None:
+            self._active_text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        normalized_tag = tag.lower()
+        if normalized_tag != self._active_tag:
+            return
+
+        text = _collapse_whitespace(unescape("".join(self._active_text)))
+        if normalized_tag == "h1" and text and not self.h1_text:
+            self.h1_text = text
+        elif normalized_tag == "dt":
+            self._pending_dt = text
+        elif normalized_tag == "dd" and self._pending_dt in _STABLE_SUBSIDY_PROGRAM_LABELS:
+            self.label_values.setdefault(self._pending_dt, text)
+            self._pending_dt = None
+
+        self._active_tag = None
+        self._active_text = []
 
 
 def _collapse_whitespace(value: str) -> str:
@@ -29,6 +149,12 @@ def _collapse_whitespace(value: str) -> str:
 
 def _stable_uuid(*parts: object) -> str:
     return str(uuid5(NAMESPACE_URL, "|".join(str(part) for part in parts)))
+
+
+def _datetime_to_json(value: datetime) -> str:
+    if value.tzinfo is None:
+        return value.isoformat()
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _validate_candidate_invariants(record: FetchManifestRecord) -> None:
@@ -68,6 +194,90 @@ def _validate_grant_program_page_input(record: FetchManifestRecord) -> None:
         raise ValueError(msg)
 
 
+def _validate_audit_report_fixture_input(record: FetchManifestRecord) -> None:
+    candidate = record.source_document_candidate
+    if candidate.source_type not in AUDIT_REPORT_SOURCE_TYPES:
+        msg = f"unsupported source_type for audit report normalization: {candidate.source_type}"
+        raise ValueError(msg)
+
+    if "text/html" not in record.media_type.lower():
+        msg = f"unsupported media_type for audit report normalization: {record.media_type}"
+        raise ValueError(msg)
+
+
+def _validate_assembly_records_input(record: FetchManifestRecord) -> None:
+    candidate = record.source_document_candidate
+    if candidate.source_type != "assembly_meeting_record_search_snapshot":
+        msg = f"unsupported source_type for assembly records normalization: {candidate.source_type}"
+        raise ValueError(msg)
+
+    if candidate.source_family != "tokyo_assembly_records_bills":
+        msg = (
+            "unsupported source_family for assembly records normalization: "
+            f"{candidate.source_family}"
+        )
+        raise ValueError(msg)
+
+    if "text/html" not in record.media_type.lower():
+        msg = f"unsupported media_type for assembly records normalization: {record.media_type}"
+        raise ValueError(msg)
+
+
+def _validate_assembly_bill_decision_input(
+    record: FetchManifestRecord,
+    fixture: TokyoAssemblyBillDecisionFixture,
+) -> None:
+    candidate = record.source_document_candidate
+    if candidate.source_type != "assembly_bill_decision":
+        msg = f"unsupported source_type for bill decision normalization: {candidate.source_type}"
+        raise ValueError(msg)
+
+    if candidate.canonical_url != fixture.source_url:
+        msg = "bill decision fixture source_url does not match candidate canonical_url"
+        raise ValueError(msg)
+
+    if candidate.title != fixture.title:
+        msg = "bill decision fixture title does not match candidate title"
+        raise ValueError(msg)
+
+    if "text/html" not in record.media_type.lower():
+        msg = f"unsupported media_type for bill decision normalization: {record.media_type}"
+        raise ValueError(msg)
+
+
+def _validate_tokyo_election_observation_input(
+    record: FetchManifestRecord,
+    observation: ElectionCandidateObservation,
+) -> None:
+    candidate = record.source_document_candidate
+    allowed_source_types = {
+        "election_result_html",
+        "election_result_pdf",
+        "public_bulletin_metadata",
+    }
+    if candidate.source_family != "tokyo_elections":
+        msg = f"unsupported source_family for election normalization: {candidate.source_family}"
+        raise ValueError(msg)
+    if candidate.source_type not in allowed_source_types:
+        msg = f"unsupported source_type for election normalization: {candidate.source_type}"
+        raise ValueError(msg)
+    if observation.source_url != record.canonical_url:
+        msg = "observation source_url must match canonical_url"
+        raise ValueError(msg)
+    if observation.retrieved_at != record.fetched_at:
+        msg = "observation retrieved_at must match fetched_at"
+        raise ValueError(msg)
+    if observation.entity_ref is not None:
+        msg = "tokyo election observations must not carry entity merge refs"
+        raise ValueError(msg)
+    if candidate.source_type == "public_bulletin_metadata" and observation.votes is not None:
+        msg = "public bulletin metadata must not carry votes"
+        raise ValueError(msg)
+    if candidate.source_type != "public_bulletin_metadata" and observation.votes is None:
+        msg = "election result observations must carry votes"
+        raise ValueError(msg)
+
+
 def _extract_title(raw_html: bytes) -> _ExtractedTitle:
     match = _TITLE_PATTERN.search(raw_html)
     if match is None:
@@ -91,6 +301,181 @@ def _extract_title(raw_html: bytes) -> _ExtractedTitle:
         normalized_text=normalized_text,
         source_span_start=source_span_start,
         source_span_end=source_span_end,
+    )
+
+
+def _extract_subsidy_program_candidate(
+    raw_html: bytes,
+    *,
+    title: str,
+) -> _ExtractedSubsidyProgramCandidate:
+    h1_match = _H1_PATTERN.search(raw_html)
+    if h1_match is None:
+        msg = "grant program page h1 is required for subsidy program candidate"
+        raise ValueError(msg)
+
+    h1_start, _h1_end = h1_match.span("h1")
+    h1_bytes = h1_match.group("h1")
+    stripped_h1_bytes = h1_bytes.strip()
+    leading_whitespace = len(h1_bytes) - len(h1_bytes.lstrip())
+    source_span_start = h1_start + leading_whitespace
+    source_span_end = source_span_start + len(stripped_h1_bytes)
+    quote_text = stripped_h1_bytes.decode("utf-8")
+    normalized_h1 = _collapse_whitespace(unescape(quote_text))
+    if not normalized_h1:
+        msg = "grant program page h1 is empty"
+        raise ValueError(msg)
+
+    parser = _GrantDetailFieldParser()
+    parser.feed(raw_html.decode("utf-8"))
+    fields = {
+        "title": title,
+        "h1": normalized_h1,
+    }
+    for label in _STABLE_SUBSIDY_PROGRAM_LABELS:
+        value = parser.label_values.get(label, "")
+        if not value:
+            msg = f"stable subsidy program field is required: {label}"
+            raise ValueError(msg)
+        fields[label] = value
+
+    return _ExtractedSubsidyProgramCandidate(
+        quote_text=quote_text,
+        normalized_text=normalized_h1,
+        source_span_start=source_span_start,
+        source_span_end=source_span_end,
+        fields=fields,
+    )
+
+
+def _decode_official_field_text(field_bytes: bytes) -> str:
+    return unescape(field_bytes.strip().decode("utf-8"))
+
+
+def _extract_audit_field(
+    *,
+    section_start: int,
+    section_body: bytes,
+    field_name: str,
+) -> _ExtractedAuditField:
+    pattern = re.compile(
+        rb'<(?P<tag>[a-z0-9]+)\b[^>]*data-field="'
+        + re.escape(field_name.encode("utf-8"))
+        + rb'"[^>]*>(?P<text>.*?)</(?P=tag)\s*>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = pattern.search(section_body)
+    if match is None:
+        msg = f"audit report fixture field is required: {field_name}"
+        raise ValueError(msg)
+
+    text_start, _text_end = match.span("text")
+    field_bytes = match.group("text")
+    stripped_field_bytes = field_bytes.strip()
+    leading_whitespace = len(field_bytes) - len(field_bytes.lstrip())
+    source_span_start = section_start + text_start + leading_whitespace
+    source_span_end = source_span_start + len(stripped_field_bytes)
+    quote_text = _decode_official_field_text(stripped_field_bytes)
+    if not quote_text:
+        msg = f"audit report fixture field is empty: {field_name}"
+        raise ValueError(msg)
+
+    return _ExtractedAuditField(
+        field_name=field_name,
+        quote_text=quote_text,
+        normalized_text=quote_text,
+        source_span_start=source_span_start,
+        source_span_end=source_span_end,
+    )
+
+
+def _extract_audit_findings(raw_html: bytes) -> tuple[_ExtractedAuditFinding, ...]:
+    findings: list[_ExtractedAuditFinding] = []
+    for match in _AUDIT_FINDING_SECTION_PATTERN.finditer(raw_html):
+        source_type = match.group("source_type").decode("utf-8")
+        if source_type not in AUDIT_REPORT_SOURCE_TYPES:
+            msg = f"unsupported audit report fixture source_type: {source_type}"
+            raise ValueError(msg)
+
+        body_start = match.start("body")
+        body = match.group("body")
+        fields = {
+            field_name: _extract_audit_field(
+                section_start=body_start,
+                section_body=body,
+                field_name=field_name,
+            )
+            for field_name in (
+                "fiscal_year",
+                "audited_entity",
+                "finding_text",
+                "measure_status",
+            )
+        }
+        findings.append(_ExtractedAuditFinding(source_type=source_type, fields=fields))
+
+    if not findings:
+        msg = "audit report fixture finding section is required"
+        raise ValueError(msg)
+
+    return tuple(findings)
+
+
+def _extract_assembly_location_metadata(raw_html: bytes) -> JsonDict:
+    match = _ASSEMBLY_METADATA_PATTERN.search(raw_html)
+    if match is None:
+        msg = "assembly speech metadata script is required"
+        raise ValueError(msg)
+
+    try:
+        metadata = json.loads(unescape(match.group("metadata").decode("utf-8")).strip())
+    except json.JSONDecodeError as exc:
+        msg = "assembly speech metadata script must contain JSON"
+        raise ValueError(msg) from exc
+
+    if not isinstance(metadata, dict):
+        msg = "assembly speech metadata must be a JSON object"
+        raise ValueError(msg)
+
+    missing_keys = [key for key in _ASSEMBLY_REQUIRED_LOCATION_METADATA_KEYS if key not in metadata]
+    if missing_keys:
+        msg = "assembly speech metadata missing keys: " + ", ".join(missing_keys)
+        raise ValueError(msg)
+
+    if not isinstance(metadata["query_parameters"], dict):
+        msg = "assembly speech query_parameters must be a JSON object"
+        raise ValueError(msg)
+    if not isinstance(metadata["target_period"], dict):
+        msg = "assembly speech target_period must be a JSON object"
+        raise ValueError(msg)
+
+    return dict(metadata)
+
+
+def _extract_assembly_speech(raw_html: bytes) -> _ExtractedAssemblySpeech:
+    match = _ASSEMBLY_SPEECH_PATTERN.search(raw_html)
+    if match is None:
+        msg = "assembly speech text block is required"
+        raise ValueError(msg)
+
+    speech_start, _speech_end = match.span("speech")
+    speech_bytes = match.group("speech")
+    stripped_speech_bytes = speech_bytes.strip()
+    leading_whitespace = len(speech_bytes) - len(speech_bytes.lstrip())
+    source_span_start = speech_start + leading_whitespace
+    source_span_end = source_span_start + len(stripped_speech_bytes)
+    quote_text = stripped_speech_bytes.decode("utf-8")
+    normalized_text = _collapse_whitespace(unescape(quote_text))
+    if not normalized_text:
+        msg = "assembly speech text is empty"
+        raise ValueError(msg)
+
+    return _ExtractedAssemblySpeech(
+        quote_text=quote_text,
+        normalized_text=normalized_text,
+        source_span_start=source_span_start,
+        source_span_end=source_span_end,
+        location_metadata=_extract_assembly_location_metadata(raw_html),
     )
 
 
@@ -170,19 +555,662 @@ def _build_title_claim(
         evidence_item.normalized_text,
     )
 
-    return EvidenceClaim(
+    return build_observed_claim(
         evidence_claim_id=evidence_claim_id,
         claim_type="grant_program_page_title_observed",
         subject_ref=source_document.source_document_id,
-        predicate="observed_page_title",
-        object_ref=None,
         object_value=evidence_item.normalized_text,
-        event_date=None,
-        amount=None,
-        currency=None,
-        evidence_item_id=evidence_item.evidence_item_id,
-        review_state="machine_extracted",
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
     )
+
+
+def _build_subsidy_program_candidate_evidence_item(
+    *,
+    source_document: SourceDocument,
+    extracted_candidate: _ExtractedSubsidyProgramCandidate,
+) -> EvidenceItem:
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "subsidy_program_candidate",
+        extracted_candidate.source_span_start,
+        extracted_candidate.source_span_end,
+        extracted_candidate.quote_text,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="html_selector",
+        location_value="h1",
+        source_span_start=extracted_candidate.source_span_start,
+        source_span_end=extracted_candidate.source_span_end,
+        quote_text=extracted_candidate.quote_text,
+        normalized_text=extracted_candidate.normalized_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="html_stable_subsidy_program_fields",
+        confidence=1.0,
+        location_metadata={
+            "fields": ["title", "h1", *_STABLE_SUBSIDY_PROGRAM_LABELS],
+            "selectors": {
+                "h1": "h1",
+                "所管局": "dt/dd label pair",
+                "対象者": "dt/dd label pair",
+                "申請期間": "dt/dd label pair",
+            },
+        },
+    )
+
+
+def _build_subsidy_program_candidate_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+    extracted_candidate: _ExtractedSubsidyProgramCandidate,
+) -> EvidenceClaim:
+    candidate_id = _stable_uuid(
+        "subsidy_program_candidate",
+        source_document.canonical_url,
+        extracted_candidate.fields["h1"],
+        extracted_candidate.fields["所管局"],
+        extracted_candidate.fields["対象者"],
+        extracted_candidate.fields["申請期間"],
+    )
+    payload = {
+        "candidate_id": candidate_id,
+        "canonical_url": source_document.canonical_url,
+        "title": extracted_candidate.fields["title"],
+        "h1": extracted_candidate.fields["h1"],
+        "bureau": extracted_candidate.fields["所管局"],
+        "eligible": extracted_candidate.fields["対象者"],
+        "application_period": extracted_candidate.fields["申請期間"],
+        "source_document_id": source_document.source_document_id,
+        "evidence_item_id": evidence_item.evidence_item_id,
+        "review_state": "candidate",
+    }
+    object_value = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "subsidy_program_candidate_observed",
+        object_value,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="subsidy_program_candidate_observed",
+        subject_ref=f"SubsidyProgramCandidate:{candidate_id}",
+        object_value=object_value,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
+def _build_probe_evidence_item(
+    *,
+    source_document: SourceDocument,
+    location_type: str,
+    location_value: str,
+    quote_text: str,
+    normalized_text: str,
+    extraction_method: str,
+    confidence: float,
+    location_metadata: JsonDict,
+    parse_warnings: tuple[str, ...],
+) -> EvidenceItem:
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        location_type,
+        location_value,
+        normalized_text,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type=location_type,
+        location_value=location_value,
+        source_span_start=0,
+        source_span_end=len(quote_text.encode("utf-8")),
+        quote_text=quote_text,
+        normalized_text=normalized_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method=extraction_method,
+        confidence=confidence,
+        location_metadata=location_metadata,
+        parse_warnings=parse_warnings,
+    )
+
+
+def _build_bill_decision_evidence_item(
+    *,
+    source_document: SourceDocument,
+    raw_html: bytes,
+    fixture: TokyoAssemblyBillDecisionFixture,
+) -> EvidenceItem:
+    quote_bytes = fixture.evidence_quote_text.encode("utf-8")
+    source_span_start = raw_html.find(quote_bytes)
+    if source_span_start < 0:
+        msg = f"bill decision evidence quote not found in raw artifact: {fixture.fixture_id}"
+        raise ValueError(msg)
+    source_span_end = source_span_start + len(quote_bytes)
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "html_bill_decision",
+        fixture.fixture_id,
+        source_span_start,
+        source_span_end,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="html_selector",
+        location_value=fixture.row_locator,
+        source_span_start=source_span_start,
+        source_span_end=source_span_end,
+        quote_text=fixture.evidence_quote_text,
+        normalized_text=fixture.evidence_quote_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="html_bill_decision_fixture",
+        confidence=1.0,
+        location_metadata={
+            "fiscal_year": fixture.fiscal_year,
+            "regular_session": fixture.regular_session,
+            "session_period": fixture.session_period,
+            "bill_number": fixture.bill_number,
+            "subject": fixture.subject,
+            "decision_result": fixture.decision_result,
+            "source_url": fixture.source_url,
+            "row_locator": fixture.row_locator,
+            "has_individual_vote_positions": fixture.has_individual_vote_positions,
+        },
+    )
+
+
+def _build_bill_decision_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+    fixture: TokyoAssemblyBillDecisionFixture,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "bill_decision_observed",
+        fixture.fixture_id,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="bill_decision_observed",
+        subject_ref=f"{source_document.source_document_id}#{fixture.fixture_id}",
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
+def _election_observation_payload(observation: ElectionCandidateObservation) -> str:
+    return json.dumps(
+        {
+            "election_name": observation.election_name,
+            "district": observation.district,
+            "candidate_name": observation.candidate_name,
+            "votes": observation.votes,
+            "source_url": observation.source_url,
+            "retrieved_at": _datetime_to_json(observation.retrieved_at),
+        },
+        ensure_ascii=False,
+        sort_keys=False,
+    )
+
+
+def _build_election_candidate_evidence_item(
+    *,
+    source_document: SourceDocument,
+    observation: ElectionCandidateObservation,
+) -> EvidenceItem:
+    payload = _election_observation_payload(observation)
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "election_candidate",
+        observation.source_locator,
+        payload,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="api_record",
+        location_value=observation.source_locator,
+        source_span_start=0,
+        source_span_end=len(payload.encode("utf-8")),
+        quote_text=payload,
+        normalized_text=payload,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="fixture_structured_election_record",
+        confidence=1.0,
+        location_metadata={
+            "source_type": source_document.source_type,
+            "source_url": observation.source_url,
+            "retrieved_at": _datetime_to_json(observation.retrieved_at),
+            "election_name": observation.election_name,
+            "district": observation.district,
+            "candidate_name": observation.candidate_name,
+            "votes": observation.votes,
+        },
+    )
+
+
+def _build_election_candidate_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "election_candidate_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="election_candidate_observed",
+        subject_ref=f"{source_document.source_document_id}#candidate:{evidence_item.location_value}",
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
+def _build_election_result_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+    observation: ElectionCandidateObservation,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "election_result_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="election_result_observed",
+        subject_ref=f"{source_document.source_document_id}#result:{evidence_item.location_value}",
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+        amount=None if observation.votes is None else str(observation.votes),
+    )
+
+
+def _build_audit_field_evidence_item(
+    *,
+    source_document: SourceDocument,
+    source_type: str,
+    fields: dict[str, _ExtractedAuditField],
+    field_name: str,
+) -> EvidenceItem:
+    extracted_field = fields[field_name]
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "audit_report_fixture",
+        field_name,
+        extracted_field.source_span_start,
+        extracted_field.source_span_end,
+        extracted_field.quote_text,
+    )
+    fiscal_year = fields["fiscal_year"].normalized_text
+    audited_entity = fields["audited_entity"].normalized_text
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="html_selector",
+        location_value=f'[data-field="{field_name}"]',
+        source_span_start=extracted_field.source_span_start,
+        source_span_end=extracted_field.source_span_end,
+        quote_text=extracted_field.quote_text,
+        normalized_text=extracted_field.normalized_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="audit_report_fixture_html",
+        confidence=1.0,
+        location_metadata={
+            "field_name": field_name,
+            "source_type": source_type,
+            "fiscal_year": fiscal_year,
+            "audited_entity": audited_entity,
+        },
+        parse_warnings=("meaning_not_interpreted",),
+    )
+
+
+def _build_audit_finding_candidate(
+    *,
+    source_document: SourceDocument,
+    source_type: str,
+    fields: dict[str, _ExtractedAuditField],
+    field_evidence_item_ids: dict[str, str],
+) -> AuditFindingCandidate:
+    fiscal_year = fields["fiscal_year"].normalized_text
+    audited_entity = fields["audited_entity"].normalized_text
+    finding_text = fields["finding_text"].normalized_text
+    measure_status = fields["measure_status"].normalized_text
+    candidate_id = _stable_uuid(
+        "audit_finding_candidate",
+        source_document.source_document_id,
+        source_type,
+        fiscal_year,
+        audited_entity,
+        finding_text,
+        measure_status,
+    )
+
+    return build_audit_finding_candidate(
+        audit_finding_candidate_id=candidate_id,
+        source_document_id=source_document.source_document_id,
+        source_type=source_type,
+        fiscal_year=fiscal_year,
+        audited_entity=audited_entity,
+        finding_text=finding_text,
+        measure_status=measure_status,
+        field_evidence_item_ids=field_evidence_item_ids,
+    )
+
+
+def _build_audit_claims(
+    *,
+    candidate: AuditFindingCandidate,
+    field_evidence_items: dict[str, EvidenceItem],
+    source_family: str,
+) -> tuple[EvidenceClaim, ...]:
+    finding_evidence = field_evidence_items["finding_text"]
+    measure_evidence = field_evidence_items["measure_status"]
+    finding_claim_id = _stable_uuid(
+        "evidence_claim",
+        candidate.audit_finding_candidate_id,
+        "audit_report_finding_text_observed",
+        candidate.finding_text,
+    )
+    measure_claim_id = _stable_uuid(
+        "evidence_claim",
+        candidate.audit_finding_candidate_id,
+        "audit_measure_status_observed",
+        candidate.measure_status,
+    )
+
+    return (
+        build_observed_claim(
+            evidence_claim_id=finding_claim_id,
+            claim_type="audit_report_finding_text_observed",
+            subject_ref=candidate.audit_finding_candidate_id,
+            object_value=candidate.finding_text,
+            evidence_item=finding_evidence,
+            source_family=source_family,
+        ),
+        build_observed_claim(
+            evidence_claim_id=measure_claim_id,
+            claim_type="audit_measure_status_observed",
+            subject_ref=candidate.audit_finding_candidate_id,
+            object_value=candidate.measure_status,
+            evidence_item=measure_evidence,
+            source_family=source_family,
+        ),
+    )
+
+
+def _build_assembly_speech_evidence_item(
+    *,
+    source_document: SourceDocument,
+    extracted_speech: _ExtractedAssemblySpeech,
+) -> EvidenceItem:
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "assembly_speech_text",
+        extracted_speech.source_span_start,
+        extracted_speech.source_span_end,
+        extracted_speech.quote_text,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="api_record",
+        location_value=str(extracted_speech.location_metadata["speech_block_locator"]),
+        source_span_start=extracted_speech.source_span_start,
+        source_span_end=extracted_speech.source_span_end,
+        quote_text=extracted_speech.quote_text,
+        normalized_text=extracted_speech.normalized_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="search_ui_snapshot",
+        confidence=1.0,
+        location_metadata=extracted_speech.location_metadata,
+        parse_warnings=("search_ui_snapshot", "meaning_not_interpreted"),
+    )
+
+
+def _build_assembly_speech_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "speech_text_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="speech_text_observed",
+        subject_ref=source_document.source_document_id,
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
+def _normalize_budget_settlement_record(
+    record: FetchManifestRecord,
+    *,
+    raw_artifact_id: str,
+    sample_index: int,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    if sample_index % 2:
+        claim_type = "budget_document_metadata_observed"
+        quote_text = f"予算・決算資料 metadata fixture {sample_index:02d}"
+        evidence_item = _build_probe_evidence_item(
+            source_document=source_document,
+            location_type="page_span",
+            location_value=f"p.{sample_index}",
+            quote_text=quote_text,
+            normalized_text=quote_text,
+            extraction_method="fixture_budget_index",
+            confidence=0.93,
+            location_metadata={
+                "page_number": sample_index,
+                "document_kind": "budget_or_settlement_index",
+            },
+            parse_warnings=("meaning_not_interpreted",),
+        )
+    else:
+        claim_type = "budget_table_cell_observed"
+        quote_text = f"歳出 事業費 {sample_index * 100:,} 千円"
+        evidence_item = _build_probe_evidence_item(
+            source_document=source_document,
+            location_type="table_cell",
+            location_value=f"table[1]/row[{sample_index}]/cell[4]",
+            quote_text=quote_text,
+            normalized_text=quote_text,
+            extraction_method="fixture_table_cell",
+            confidence=0.86,
+            location_metadata={
+                "page_number": sample_index,
+                "table_index": 1,
+                "row_index": sample_index,
+                "column_index": 4,
+                "unit_note": "fixture states 金額単位 but not normalized",
+                "tax_note": "税込・税抜は資料セルから確定しない",
+            },
+            parse_warnings=(
+                "table_structure_inferred",
+                "amount_unit_ambiguous",
+                "meaning_not_interpreted",
+            ),
+        )
+
+    evidence_claim = build_observed_claim(
+        evidence_claim_id=_stable_uuid(
+            "evidence_claim",
+            evidence_item.evidence_item_id,
+            claim_type,
+        ),
+        claim_type=claim_type,
+        subject_ref=source_document.source_document_id,
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=(evidence_claim,),
+    )
+
+
+def _normalize_procurement_record(
+    record: FetchManifestRecord,
+    *,
+    raw_artifact_id: str,
+    sample_index: int,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    quote_text = f"委託案件 fixture {sample_index:02d} 株式会社サンプル {sample_index}"
+    evidence_item = _build_probe_evidence_item(
+        source_document=source_document,
+        location_type="api_record",
+        location_value=f"result-row-{sample_index}",
+        quote_text=quote_text,
+        normalized_text=quote_text,
+        extraction_method="search_ui_snapshot",
+        confidence=0.9,
+        location_metadata={
+            "search_form_url": "https://www.e-procurement.metro.tokyo.lg.jp/index.jsp",
+            "query_parameters": {
+                "keyword": "委託",
+                "status": "結果公表",
+            },
+            "page_number": 1,
+            "sort_order": "published_at_desc",
+            "snapshot_timestamp": "2026-07-07T00:00:00Z",
+            "result_row_locator": f"tr[data-fixture-row='{sample_index}']",
+            "tax_note": "税込・税抜は検索結果 snapshot から確定しない",
+            "vendor_resolution_note": "vendor 名寄せは行わない",
+            "contract_match_note": "契約案との突合は行わない",
+        },
+        parse_warnings=(
+            "search_ui_snapshot",
+            "amount_unit_ambiguous",
+            "entity_resolution_required",
+        ),
+    )
+    evidence_claim = build_observed_claim(
+        evidence_claim_id=_stable_uuid(
+            "evidence_claim",
+            evidence_item.evidence_item_id,
+            "procurement_search_row_observed",
+        ),
+        claim_type="procurement_search_row_observed",
+        subject_ref=source_document.source_document_id,
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=(evidence_claim,),
+    )
+
+
+def normalize_p0r008_procurement_budget_fixture(
+    records: tuple[FetchManifestRecord, ...],
+) -> tuple[NormalizeResult, ...]:
+    results: list[NormalizeResult] = []
+    source_family_counts: dict[str, int] = {}
+    for record in records:
+        source_family = record.connector.source_family.source_family
+        source_family_counts[source_family] = source_family_counts.get(source_family, 0) + 1
+        sample_index = source_family_counts[source_family]
+        raw_artifact_id = _stable_uuid(
+            "raw_artifact",
+            record.raw_artifact_path,
+            record.content_hash,
+        )
+
+        if source_family == "tokyo_budget_settlement":
+            results.append(
+                _normalize_budget_settlement_record(
+                    record,
+                    raw_artifact_id=raw_artifact_id,
+                    sample_index=sample_index,
+                )
+            )
+        elif source_family == "tokyo_procurement":
+            results.append(
+                _normalize_procurement_record(
+                    record,
+                    raw_artifact_id=raw_artifact_id,
+                    sample_index=sample_index,
+                )
+            )
+        else:
+            msg = f"unsupported P0R-008 source_family: {source_family}"
+            raise ValueError(msg)
+
+    return tuple(results)
+
+
+def p0r008_procurement_budget_non_goal_guard() -> JsonDict:
+    return {
+        "blocked_entity_types": [
+            "BudgetLine",
+            "ContractAward",
+            "PublicMoneyFlow",
+            "SpendingReviewSignal",
+        ],
+        "blocked_confirmations": [
+            "amount_normalization_confirmation",
+            "tax_included_or_excluded_confirmation",
+            "vendor_entity_resolution",
+            "contract_proposal_match_confirmation",
+        ],
+    }
 
 
 def normalize_grant_program_page(
@@ -194,6 +1222,10 @@ def normalize_grant_program_page(
     _validate_candidate_invariants(record)
     _validate_grant_program_page_input(record)
     extracted_title = _extract_title(raw_html)
+    extracted_candidate = _extract_subsidy_program_candidate(
+        raw_html,
+        title=extracted_title.normalized_text,
+    )
     source_document = _promote_source_document(
         record,
         raw_artifact_id=raw_artifact_id,
@@ -204,6 +1236,196 @@ def normalize_grant_program_page(
         extracted_title=extracted_title,
     )
     evidence_claim = _build_title_claim(
+        source_document=source_document,
+        evidence_item=evidence_item,
+    )
+    candidate_evidence_item = _build_subsidy_program_candidate_evidence_item(
+        source_document=source_document,
+        extracted_candidate=extracted_candidate,
+    )
+    candidate_claim = _build_subsidy_program_candidate_claim(
+        source_document=source_document,
+        evidence_item=candidate_evidence_item,
+        extracted_candidate=extracted_candidate,
+    )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item, candidate_evidence_item),
+        evidence_claims=(evidence_claim, candidate_claim),
+    )
+
+
+def normalize_assembly_bill_decision(
+    record: FetchManifestRecord,
+    raw_html: bytes,
+    fixture: TokyoAssemblyBillDecisionFixture,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_assembly_bill_decision_input(record, fixture)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=fixture.title,
+    )
+    evidence_item = _build_bill_decision_evidence_item(
+        source_document=source_document,
+        raw_html=raw_html,
+        fixture=fixture,
+    )
+    evidence_claim = _build_bill_decision_claim(
+        source_document=source_document,
+        evidence_item=evidence_item,
+        fixture=fixture,
+    )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=(evidence_claim,),
+    )
+
+
+def normalize_tokyo_election_candidate_observation(
+    record: FetchManifestRecord,
+    observation: ElectionCandidateObservation,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_tokyo_election_observation_input(record, observation)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    evidence_item = _build_election_candidate_evidence_item(
+        source_document=source_document,
+        observation=observation,
+    )
+    evidence_claims = [
+        _build_election_candidate_claim(
+            source_document=source_document,
+            evidence_item=evidence_item,
+        )
+    ]
+    if observation.votes is not None:
+        evidence_claims.append(
+            _build_election_result_claim(
+                source_document=source_document,
+                evidence_item=evidence_item,
+                observation=observation,
+            )
+        )
+    validate_tokyo_election_claims_do_not_merge_entities(evidence_claims)
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=tuple(evidence_claims),
+    )
+
+
+def build_vote_positions_from_bill_decision_fixture(
+    fixture: TokyoAssemblyBillDecisionFixture,
+) -> tuple[object, ...]:
+    if not fixture.has_individual_vote_positions:
+        return ()
+
+    msg = "VotePosition generation is outside the Phase 0 bill decision fixture scope"
+    raise ValueError(msg)
+
+
+def normalize_audit_report_fixture(
+    record: FetchManifestRecord,
+    raw_html: bytes,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_audit_report_fixture_input(record)
+    extracted_title = _extract_title(raw_html)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=extracted_title.normalized_text,
+    )
+    extracted_findings = _extract_audit_findings(raw_html)
+
+    evidence_items: list[EvidenceItem] = []
+    evidence_claims: list[EvidenceClaim] = []
+    audit_finding_candidates: list[AuditFindingCandidate] = []
+    for extracted_finding in extracted_findings:
+        if extracted_finding.source_type != record.source_document_candidate.source_type:
+            msg = (
+                "audit report fixture source_type does not match source_document_candidate: "
+                f"{extracted_finding.source_type}"
+            )
+            raise ValueError(msg)
+
+        field_evidence_items = {
+            field_name: _build_audit_field_evidence_item(
+                source_document=source_document,
+                source_type=extracted_finding.source_type,
+                fields=extracted_finding.fields,
+                field_name=field_name,
+            )
+            for field_name in (
+                "fiscal_year",
+                "audited_entity",
+                "finding_text",
+                "measure_status",
+            )
+        }
+        field_evidence_item_ids = {
+            field_name: evidence_item.evidence_item_id
+            for field_name, evidence_item in field_evidence_items.items()
+        }
+        candidate = _build_audit_finding_candidate(
+            source_document=source_document,
+            source_type=extracted_finding.source_type,
+            fields=extracted_finding.fields,
+            field_evidence_item_ids=field_evidence_item_ids,
+        )
+        audit_finding_candidates.append(candidate)
+        evidence_items.extend(field_evidence_items.values())
+        evidence_claims.extend(
+            _build_audit_claims(
+                candidate=candidate,
+                field_evidence_items=field_evidence_items,
+                source_family=source_document.source_family,
+            )
+        )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=tuple(evidence_items),
+        evidence_claims=tuple(evidence_claims),
+        audit_finding_candidates=tuple(audit_finding_candidates),
+    )
+
+
+def normalize_assembly_records_search_snapshot(
+    record: FetchManifestRecord,
+    raw_html: bytes,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_assembly_records_input(record)
+    extracted_speech = _extract_assembly_speech(raw_html)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    evidence_item = _build_assembly_speech_evidence_item(
+        source_document=source_document,
+        extracted_speech=extracted_speech,
+    )
+    evidence_claim = _build_assembly_speech_claim(
         source_document=source_document,
         evidence_item=evidence_item,
     )

@@ -30,6 +30,24 @@ docker compose --env-file .env.local ps
 - Neo4j Bolt: `bolt://localhost:7687`
 - Meilisearch: `http://localhost:7700`
 
+Phase 0 RawArtifact storage smoke だけを確認する場合は MinIO と one-shot
+initializer だけを起動する。
+
+```bash
+docker compose --env-file .env.local up -d minio minio-init
+docker compose --env-file .env.local ps minio minio-init
+cd services
+uv run python -m ingest storage-smoke \
+  --bucket openpolitics-raw \
+  --endpoint http://localhost:9000
+```
+
+`minio-init` は `openpolitics-raw` bucket 作成と versioning 有効化が完了したら
+exit してよい。Docker / MinIO が使えない環境では `storage-smoke` は
+`status: skipped` を返し、通常 test には含めない。`storage-smoke` の endpoint は
+local MinIO 専用であり、`localhost`、loopback IP、または Compose service 名
+`minio` 以外は PUT 前に拒否する。
+
 停止:
 
 ```bash

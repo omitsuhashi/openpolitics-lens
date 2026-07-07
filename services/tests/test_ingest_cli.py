@@ -41,9 +41,16 @@ def test_tokyo_metro_grants_fixture_cli_writes_manifests_and_raw_artifact(
     fetched = [json.loads(line) for line in fetched_path.read_text().splitlines()]
 
     assert [record["canonical_url"] for record in discovered] == [
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-staff-training.html",
         "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-subsidy.html",
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/temporary-care.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/after-school.html",
         "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/support.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/young-family-rent.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/wakamono/activity-grant.html",
         "https://www.metro.tokyo.lg.jp/education/support/private-school-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/school-lunch-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/special-needs-school-grant.html",
     ]
     assert [record["canonical_url"] for record in fetched] == [
         record["canonical_url"] for record in discovered
@@ -99,6 +106,113 @@ def test_tokyo_metro_grants_help_lists_fixture_and_run_without_live_flag() -> No
     assert "fixture" in result.stdout
     assert "run" in result.stdout
     assert "--live" not in result.stdout
+
+
+def test_ingest_help_lists_storage_smoke_command() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "--help",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "storage-smoke" in result.stdout
+
+
+def test_ingest_help_lists_phase0_fixture_report_command() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "--help",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "phase0" in result.stdout
+
+
+def test_phase0_fixture_report_cli_writes_json_and_markdown(tmp_path: Path) -> None:
+    knowledge_report = tmp_path / "phase0-source-probe-feasibility-report.md"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "phase0",
+            "fixture-report",
+            "--fixtures",
+            "tests/fixtures",
+            "--output-dir",
+            str(tmp_path),
+            "--knowledge-report",
+            str(knowledge_report),
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    stdout_payload = json.loads(result.stdout)
+    report_path = tmp_path / "phase0-fixture-report.json"
+    assert stdout_payload["phase0_status"] == "complete"
+    assert stdout_payload["json_report_path"] == str(report_path)
+    assert stdout_payload["markdown_report_path"] == str(knowledge_report)
+    assert stdout_payload["forbidden_operations_not_used"] == [
+        "browser_automation",
+        "external_network",
+        "live_search",
+        "ocr_execution",
+        "pdf_download",
+    ]
+
+    report_payload = json.loads(report_path.read_text(encoding="utf-8"))
+    rows_by_family = {row["source_family"]: row for row in report_payload["source_families"]}
+    assert set(rows_by_family) == {
+        "tokyo_assembly_records_bills",
+        "tokyo_elections",
+        "tokyo_political_funds",
+        "tokyo_budget_settlement",
+        "tokyo_procurement",
+        "tokyo_metro_grants",
+        "tokyo_audit_reports",
+    }
+    assert report_payload["phase0_status"] == "complete"
+    assert report_payload["achieved_source_family_count"] == 7
+    assert report_payload["coverage_source_family_goal_met"] is True
+    assert report_payload["required_source_families_goal_met"] is True
+    assert report_payload["missing_required_source_families"] == []
+
+    for row in rows_by_family.values():
+        assert row["status"] == "complete"
+        assert row["raw_artifact_count"] >= 10
+        assert row["source_document_candidate_count"] >= 10
+        assert row["evidence_item_count"] >= 10
+        assert row["blocked_reason"] is None
+
+    assert rows_by_family["tokyo_metro_grants"]["status"] == "complete"
+    assert rows_by_family["tokyo_audit_reports"]["status"] == "complete"
+
+    markdown = knowledge_report.read_text(encoding="utf-8")
+    assert "Phase 0 判定: `complete`" in markdown
+    assert "東京都監査事務局 財政援助団体等監査・包括外部監査" in markdown
+    assert "都庁総合ホームページ 助成・補助金" in markdown
 
 
 def test_tokyo_metro_grants_run_is_reserved_for_future_live_ingest(
