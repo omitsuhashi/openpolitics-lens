@@ -246,3 +246,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-002-input-packet.json`、`phase0-remainder-p0r-002-execution-envelope.json`、`phase0-remainder-p0r-002-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001` も packet / envelope に含めた。
 - `P0R-001` head `9045c8fd6aef5b41d29386e5514310c77f12f100` を blocker head base とし、`P0R-002` branch をそこから作る方針にした。
 - 実行対象は EvidenceItem / EvidenceClaim の schema、warning、locator、claim catalog 拡張に限定し、source registry、source probe、PDF/OCR 実行、live DB apply は非対象に残した。
+
+## [2026-07-07] implementation | P0R-002 evidence warning catalog
+
+- `P0R-002` の worker 実装を review gate に通し、head `a66fca34b24a965fae35d2611abf023a1b69c941` を local `PR_READY` として記録。
+- `EvidenceItem` に `location_metadata`、`parse_warnings`、`extraction_artifact_path` を追加し、PDF / table / search snapshot の locator と warning を serialized contract / tests に反映した。
+- `EvidenceClaim` は claim type / predicate catalog を code-side に持つようにし、`grant_program_page_title_observed` だけに閉じた制限を外した。low confidence、blocking warning、locator 不足では claim 昇格しない guard を追加した。
+- verification は `uv run pytest -q` 60 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- live database migration apply は未実施のまま残し、`P0R-003` の blocker を解除して次の実行可能 issue とした。
