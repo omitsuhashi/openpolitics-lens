@@ -1,6 +1,6 @@
 import json
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -226,3 +226,158 @@ def test_normalize_rejects_non_html_media_type(media_type: str) -> None:
             "<html><head><title>子育て応援助成制度</title></head></html>".encode(),
             raw_artifact_id=_raw_artifact_id(record),
         )
+
+
+def _event_source_assertion(
+    *,
+    asserted_field: str = "scheduled_date",
+    asserted_value: str = "2026-07-21",
+    conflict_state: str = "none",
+    evidence_item_id: str = "evidence-election-notice-1",
+) -> normalize.EventSourceAssertion:
+    return normalize.EventSourceAssertion(
+        event_candidate_id="event-candidate-tokyo-governor-polling-day",
+        source_document_id="source-document-election-notice",
+        evidence_item_id=evidence_item_id,
+        asserted_field=asserted_field,
+        asserted_value=asserted_value,
+        asserted_at=datetime(2026, 7, 7, 9, 30, tzinfo=UTC),
+        source_priority=10,
+        conflict_state=conflict_state,
+        confidence=0.95,
+        review_state="machine_extracted",
+        limitations=("fixture source only",),
+    )
+
+
+def _official_event_candidate(
+    *source_assertions: normalize.EventSourceAssertion,
+) -> normalize.OfficialPoliticalEventCandidate:
+    assertions = source_assertions or (_event_source_assertion(),)
+    return normalize.OfficialPoliticalEventCandidate(
+        event_candidate_id="event-candidate-tokyo-governor-polling-day",
+        event_family="Election",
+        event_type="polling_day",
+        jurisdiction_id="jp-tokyo",
+        jurisdiction_level="prefecture",
+        source_system="tokyo_election_administration_commission",
+        source_family="jp_prefecture_election_schedules",
+        connector_id="jp_tokyo.election_schedule.v1",
+        title="東京都知事選挙 投票日",
+        scheduled_date=date(2026, 7, 21),
+        scheduled_time=None,
+        timezone="Asia/Tokyo",
+        date_precision="date",
+        office_or_body="東京都知事",
+        event_status="scheduled",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/example/schedule.html",
+        source_document_id="source-document-election-notice",
+        evidence_item_id="evidence-election-notice-1",
+        extraction_method="fixture_html_table",
+        confidence=0.95,
+        review_state="machine_extracted",
+        limitations=("fixture source only",),
+        source_assertions=assertions,
+    )
+
+
+def test_official_political_event_candidate_round_trips_json_contract() -> None:
+    candidate = _official_event_candidate()
+
+    candidate_json = candidate.to_json_dict()
+    json.dumps(candidate_json, ensure_ascii=False)
+
+    assert candidate_json["event_family"] == "Election"
+    assert candidate_json["event_type"] == "polling_day"
+    assert candidate_json["event_status"] == "scheduled"
+    assert candidate_json["scheduled_date"] == "2026-07-21"
+    assert candidate_json["scheduled_time"] is None
+    assert candidate_json["timezone"] == "Asia/Tokyo"
+    assert candidate_json["date_precision"] == "date"
+    assert candidate_json["source_document_id"] == "source-document-election-notice"
+    assert candidate_json["evidence_item_id"] == "evidence-election-notice-1"
+    assert candidate_json["confidence"] == 0.95
+    assert candidate_json["review_state"] == "machine_extracted"
+    assert candidate_json["limitations"] == ["fixture source only"]
+    assert candidate_json["conflict_states"] == []
+    assert normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json) == candidate
+
+
+def test_event_candidate_keeps_multiple_source_assertions_and_conflicts() -> None:
+    primary_assertion = _event_source_assertion()
+    date_conflict = _event_source_assertion(
+        asserted_value="2026-07-20",
+        conflict_state="date_mismatch",
+        evidence_item_id="evidence-aggregator-date-1",
+    )
+    title_conflict = _event_source_assertion(
+        asserted_field="title",
+        asserted_value="東京都知事選挙期日",
+        conflict_state="title_mismatch",
+        evidence_item_id="evidence-aggregator-title-1",
+    )
+    status_conflict = _event_source_assertion(
+        asserted_field="event_status",
+        asserted_value="postponed",
+        conflict_state="status_mismatch",
+        evidence_item_id="evidence-aggregator-status-1",
+    )
+
+    candidate = _official_event_candidate(
+        primary_assertion,
+        date_conflict,
+        title_conflict,
+        status_conflict,
+    )
+
+    candidate_json = candidate.to_json_dict()
+
+    assert len(candidate.source_assertions) == 4
+    assert candidate.conflict_states() == (
+        "date_mismatch",
+        "title_mismatch",
+        "status_mismatch",
+    )
+    assert candidate_json["scheduled_date"] == "2026-07-21"
+    assert [item["asserted_value"] for item in candidate_json["source_assertions"]] == [
+        "2026-07-21",
+        "2026-07-20",
+        "東京都知事選挙期日",
+        "postponed",
+    ]
+    assert candidate_json["conflict_states"] == [
+        "date_mismatch",
+        "title_mismatch",
+        "status_mismatch",
+    ]
+    assert normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json) == candidate
+
+
+def test_event_candidates_require_evidence_backed_source_assertions() -> None:
+    with pytest.raises(ValueError, match="source_assertions"):
+        replace(_official_event_candidate(), source_assertions=())
+
+    with pytest.raises(ValueError, match="evidence_item_id"):
+        _official_event_candidate(
+            _event_source_assertion(evidence_item_id=""),
+        )
+
+    candidate_json = _official_event_candidate().to_json_dict()
+    candidate_json["evidence_item_id"] = ""
+    with pytest.raises(ValueError, match="evidence_item_id"):
+        normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json)
+
+
+def test_vote_event_candidate_does_not_generate_vote_positions_without_source_positions() -> None:
+    candidate = replace(
+        _official_event_candidate(),
+        event_family="Diet",
+        event_type="vote_held",
+        title="本会議 採決",
+        office_or_body="衆議院本会議",
+    )
+
+    candidate_json = candidate.to_json_dict()
+
+    assert "vote_positions" not in candidate_json
+    assert "VotePosition" not in json.dumps(candidate_json, ensure_ascii=False)
