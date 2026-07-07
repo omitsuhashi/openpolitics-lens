@@ -3,7 +3,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 
-from ingest.contracts import ConnectorDefinition, JsonDict, JurisdictionProfile, SourceFamily
+from ingest.contracts import (
+    ConnectorDefinition,
+    FetchManifestRecord,
+    JsonDict,
+    JurisdictionProfile,
+    SourceDocumentCandidate,
+    SourceFamily,
+)
 from ingest.tokyo_metro_grants import TOKYO_METRO_GRANTS_CONNECTOR
 
 NORMAL_TEST_FORBIDDEN_OPERATIONS: frozenset[str] = frozenset(
@@ -169,6 +176,17 @@ class FixtureCoverageSummary:
             "target": self.target.to_json_dict(),
             "meets_target": self.meets_target,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class P0R008ProcurementBudgetFixture:
+    budget_records: tuple[FetchManifestRecord, ...]
+    procurement_records: tuple[FetchManifestRecord, ...]
+    fixture_metadata: tuple[FixtureMetadata, ...]
+
+    @property
+    def records(self) -> tuple[FetchManifestRecord, ...]:
+        return (*self.budget_records, *self.procurement_records)
 
 
 PHASE0_SOURCE_REGISTRY: dict[str, Phase0SourceRegistryEntry] = {
@@ -395,3 +413,113 @@ def summarize_phase0_fixture_coverage(
         )
         for source_family, source_counts in counts.items()
     }
+
+
+def _raw_artifact_path(
+    *,
+    source_family: str,
+    content_hash: str,
+    extension: str,
+) -> str:
+    normalized_extension = extension.removeprefix(".").lower()
+    return f"raw/jp-tokyo/{source_family}/2026/07/{content_hash}.{normalized_extension}"
+
+
+def _fixture_manifest_record(
+    *,
+    source_family: str,
+    fixture_id: str,
+    canonical_url: str,
+    title: str,
+    source_type: str,
+    media_type: str = "text/html; charset=utf-8",
+) -> FetchManifestRecord:
+    entry = PHASE0_SOURCE_REGISTRY[source_family]
+    content_hash = _fixture_hash(fixture_id)
+    raw_artifact_path = _raw_artifact_path(
+        source_family=source_family,
+        content_hash=content_hash,
+        extension="html",
+    )
+    candidate = SourceDocumentCandidate(
+        canonical_url=canonical_url,
+        title=title,
+        source_type=source_type,
+        jurisdiction_id=entry.connector.jurisdiction.jurisdiction_id,
+        source_family=source_family,
+        language="ja",
+        retrieved_at=_FIXTURE_FETCHED_AT,
+        raw_artifact_path=raw_artifact_path,
+    )
+
+    return FetchManifestRecord(
+        connector=entry.connector,
+        canonical_url=canonical_url,
+        fetched_at=_FIXTURE_FETCHED_AT,
+        http_status=200,
+        content_hash=content_hash,
+        media_type=media_type,
+        byte_size=len(f"{fixture_id}:{title}".encode()),
+        raw_artifact_path=raw_artifact_path,
+        source_document_candidate=candidate,
+    )
+
+
+def _fixture_metadata_from_record(
+    *,
+    fixture_id: str,
+    record: FetchManifestRecord,
+    expected_evidence_item_count: int = 1,
+) -> FixtureMetadata:
+    return FixtureMetadata(
+        fixture_id=fixture_id,
+        source_family=record.connector.source_family.source_family,
+        canonical_url=record.canonical_url,
+        fetched_at=record.fetched_at,
+        media_type=record.media_type,
+        byte_size=record.byte_size,
+        content_hash=record.content_hash,
+        source_type=record.source_document_candidate.source_type,
+        expected_evidence_item_count=expected_evidence_item_count,
+    )
+
+
+def build_p0r008_procurement_budget_fixture() -> P0R008ProcurementBudgetFixture:
+    budget_records = tuple(
+        _fixture_manifest_record(
+            source_family="tokyo_budget_settlement",
+            fixture_id=f"p0r008-budget-settlement-{index:02d}",
+            canonical_url=(
+                f"https://www.zaimu.metro.tokyo.lg.jp/zaisei/yosan/fixture-2026-{index:02d}.html"
+            ),
+            title=f"令和8年度 東京都予算・決算 fixture {index:02d}",
+            source_type="budget_or_settlement_document",
+        )
+        for index in range(1, 11)
+    )
+    procurement_records = tuple(
+        _fixture_manifest_record(
+            source_family="tokyo_procurement",
+            fixture_id=f"p0r008-procurement-search-{index:02d}",
+            canonical_url=(
+                "https://www.e-procurement.metro.tokyo.lg.jp/search/"
+                f"fixture-result-{index:02d}.html"
+            ),
+            title=f"東京都電子調達 検索結果 fixture {index:02d}",
+            source_type="procurement_search_result_or_bid_result",
+        )
+        for index in range(1, 11)
+    )
+    fixture_metadata = tuple(
+        _fixture_metadata_from_record(
+            fixture_id=f"p0r008-{record.connector.source_family.source_family}-{index:02d}",
+            record=record,
+        )
+        for index, record in enumerate((*budget_records, *procurement_records), start=1)
+    )
+
+    return P0R008ProcurementBudgetFixture(
+        budget_records=budget_records,
+        procurement_records=procurement_records,
+        fixture_metadata=fixture_metadata,
+    )
