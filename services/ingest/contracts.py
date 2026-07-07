@@ -18,6 +18,8 @@ CoverageStatus = Literal[
     "blocked_by_terms",
     "retired",
 ]
+CoverageFailureKind = Literal["fetch_failure", "parser_failure"]
+CoverageKey = tuple[str, str, str, str, str]
 
 OFFICIALITY_LEVELS: tuple[str, ...] = (
     "official_primary",
@@ -27,6 +29,15 @@ OFFICIALITY_LEVELS: tuple[str, ...] = (
     "non_official_reference",
 )
 COVERAGE_STATUSES: tuple[str, ...] = (
+    "supported",
+    "source_identified",
+    "manual_review_required",
+    "source_missing",
+    "blocked_by_terms",
+    "retired",
+)
+COVERAGE_FAILURE_KINDS: tuple[str, ...] = ("fetch_failure", "parser_failure")
+COVERAGE_SUMMARY_STATUSES: tuple[str, ...] = (
     "supported",
     "source_identified",
     "manual_review_required",
@@ -241,7 +252,7 @@ class SourceRegistryRecord:
             connector_status=_required_str(data, "connector_status"),
         )
 
-    def coverage_key(self) -> tuple[str, str, str, str, str]:
+    def coverage_key(self) -> CoverageKey:
         return (
             self.jurisdiction_id,
             self.source_system,
@@ -351,7 +362,7 @@ class SourceCoverageRecord:
             next_action=_required_str(data, "next_action"),
         )
 
-    def coverage_key(self) -> tuple[str, str, str, str, str]:
+    def coverage_key(self) -> CoverageKey:
         return (
             self.jurisdiction_id,
             self.source_system,
@@ -381,15 +392,184 @@ class SourceCoverageRecord:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class CoverageStatusCount:
+    coverage_status: CoverageStatus
+    count: int
+
+    def __post_init__(self) -> None:
+        _validate_choice("coverage_status", self.coverage_status, COVERAGE_STATUSES)
+        if isinstance(self.count, bool) or not isinstance(self.count, int) or self.count < 0:
+            raise ValueError("count must be a non-negative integer")
+
+    def to_json_dict(self) -> JsonDict:
+        return {"coverage_status": self.coverage_status, "count": self.count}
+
+
+@dataclass(frozen=True, slots=True)
+class RequiredCoverageSummary:
+    required_source_count: int
+    coverage_record_count: int
+    status_counts: tuple[CoverageStatusCount, ...]
+    missing_coverage_keys: tuple[CoverageKey, ...]
+    coverage_gap_keys: tuple[CoverageKey, ...]
+    observed_event_count: int | None = None
+
+    def __post_init__(self) -> None:
+        for field_name in ("required_source_count", "coverage_record_count"):
+            value = getattr(self, field_name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{field_name} must be a non-negative integer")
+        if self.observed_event_count is not None and (
+            isinstance(self.observed_event_count, bool)
+            or not isinstance(self.observed_event_count, int)
+            or self.observed_event_count < 0
+        ):
+            raise ValueError("observed_event_count must be null or a non-negative integer")
+
+    @property
+    def has_all_required_coverage_records(self) -> bool:
+        return not self.missing_coverage_keys
+
+    @property
+    def is_complete(self) -> bool:
+        return self.has_all_required_coverage_records and not self.coverage_gap_keys
+
+    @property
+    def no_events_claimed(self) -> bool:
+        return False
+
+    def status_count(self, coverage_status: CoverageStatus) -> int:
+        _validate_choice("coverage_status", coverage_status, COVERAGE_STATUSES)
+        for item in self.status_counts:
+            if item.coverage_status == coverage_status:
+                return item.count
+        return 0
+
+    def to_json_dict(self) -> JsonDict:
+        return {
+            "required_source_count": self.required_source_count,
+            "coverage_record_count": self.coverage_record_count,
+            "status_counts": {item.coverage_status: item.count for item in self.status_counts},
+            "missing_coverage_keys": [list(key) for key in self.missing_coverage_keys],
+            "coverage_gap_keys": [list(key) for key in self.coverage_gap_keys],
+            "has_all_required_coverage_records": self.has_all_required_coverage_records,
+            "is_complete": self.is_complete,
+            "observed_event_count": self.observed_event_count,
+            "event_absence_claim": "not_asserted",
+            "no_events_claimed": self.no_events_claimed,
+        }
+
+
 class MissingSourceCoverageError(ValueError):
     pass
+
+
+class DuplicateSourceCoverageError(ValueError):
+    pass
+
+
+def _coverage_records_by_key(
+    coverage_records: tuple[SourceCoverageRecord, ...],
+) -> dict[CoverageKey, SourceCoverageRecord]:
+    coverage_by_key: dict[CoverageKey, SourceCoverageRecord] = {}
+    duplicate_keys: list[CoverageKey] = []
+    for record in coverage_records:
+        key = record.coverage_key()
+        if key in coverage_by_key:
+            duplicate_keys.append(key)
+            continue
+        coverage_by_key[key] = record
+    if duplicate_keys:
+        duplicate_text = ", ".join("/".join(key) for key in duplicate_keys)
+        raise DuplicateSourceCoverageError(f"duplicate source coverage records: {duplicate_text}")
+    return coverage_by_key
+
+
+def summarize_required_coverage(
+    registry_records: tuple[SourceRegistryRecord, ...],
+    coverage_records: tuple[SourceCoverageRecord, ...],
+    *,
+    observed_event_count: int | None = None,
+) -> RequiredCoverageSummary:
+    coverage_by_key = _coverage_records_by_key(coverage_records)
+    required_records = tuple(
+        record
+        for record in registry_records
+        if record.source_family in REQUIRED_COVERAGE_SOURCE_FAMILIES
+    )
+    missing_coverage_keys = tuple(
+        record.coverage_key()
+        for record in required_records
+        if record.coverage_key() not in coverage_by_key
+    )
+    present_coverage_records = tuple(
+        coverage_by_key[record.coverage_key()]
+        for record in required_records
+        if record.coverage_key() in coverage_by_key
+    )
+    counts = {status: 0 for status in COVERAGE_SUMMARY_STATUSES}
+    for record in present_coverage_records:
+        counts[record.coverage_status] += 1
+    coverage_gap_keys = tuple(
+        record.coverage_key()
+        for record in present_coverage_records
+        if record.coverage_status != "supported"
+    )
+    return RequiredCoverageSummary(
+        required_source_count=len(required_records),
+        coverage_record_count=len(present_coverage_records),
+        status_counts=tuple(
+            CoverageStatusCount(coverage_status=status, count=count)
+            for status, count in counts.items()
+        ),
+        missing_coverage_keys=missing_coverage_keys,
+        coverage_gap_keys=coverage_gap_keys,
+        observed_event_count=observed_event_count,
+    )
+
+
+def source_coverage_failure_record(
+    registry_record: SourceRegistryRecord,
+    *,
+    failure_kind: CoverageFailureKind,
+    checked_at: datetime,
+    error: str,
+    next_action: str,
+    manual_notes: str | None = None,
+) -> SourceCoverageRecord:
+    _validate_choice("failure_kind", failure_kind, COVERAGE_FAILURE_KINDS)
+    if not isinstance(error, str) or not error.strip():
+        raise ValueError("error must be a non-empty string")
+    return SourceCoverageRecord(
+        jurisdiction_id=registry_record.jurisdiction_id,
+        jurisdiction_level=registry_record.jurisdiction_level,
+        source_system=registry_record.source_system,
+        source_family=registry_record.source_family,
+        connector_id=registry_record.connector_id,
+        retrieval_method=registry_record.retrieval_method,
+        coverage_scope=registry_record.coverage_scope,
+        coverage_status="manual_review_required",
+        entrypoint_url=registry_record.entrypoint_url,
+        last_checked_at=checked_at,
+        last_successful_fetch_at=None,
+        last_verified_at=checked_at,
+        last_error=f"{failure_kind}: {error.strip()}",
+        terms_note=registry_record.terms_note,
+        manual_notes=(
+            manual_notes
+            if manual_notes is not None
+            else f"{failure_kind} recorded as a coverage gap; this is not a silent drop."
+        ),
+        next_action=next_action,
+    )
 
 
 def validate_required_coverage_records(
     registry_records: tuple[SourceRegistryRecord, ...],
     coverage_records: tuple[SourceCoverageRecord, ...],
 ) -> None:
-    coverage_keys = {record.coverage_key() for record in coverage_records}
+    coverage_keys = set(_coverage_records_by_key(coverage_records))
     missing = [
         record.coverage_key()
         for record in registry_records
@@ -405,7 +585,7 @@ def connector_execution_targets(
     registry_records: tuple[SourceRegistryRecord, ...],
     coverage_records: tuple[SourceCoverageRecord, ...] = (),
 ) -> tuple[SourceRegistryRecord, ...]:
-    coverage_by_key = {record.coverage_key(): record for record in coverage_records}
+    coverage_by_key = _coverage_records_by_key(coverage_records)
     return tuple(
         record
         for record in registry_records

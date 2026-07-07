@@ -1,16 +1,21 @@
 from ingest.contracts import (
     ConnectorDefinition,
     CoverageStatus,
+    CoverageStatusCount,
     DiscoveryRecord,
+    DuplicateSourceCoverageError,
     FetchManifestRecord,
     JurisdictionProfile,
     MissingSourceCoverageError,
     OfficialityLevel,
+    RequiredCoverageSummary,
     SourceCoverageRecord,
     SourceDocumentCandidate,
     SourceFamily,
     SourceRegistryRecord,
     connector_execution_targets,
+    source_coverage_failure_record,
+    summarize_required_coverage,
     validate_required_coverage_records,
 )
 from ingest.filesystem import FileSystemOutputWriter, RawArtifactWrite, content_sha256
@@ -32,7 +37,9 @@ from ingest.tokyo_metro_grants import (
 __all__ = [
     "ConnectorDefinition",
     "CoverageStatus",
+    "CoverageStatusCount",
     "DiscoveryRecord",
+    "DuplicateSourceCoverageError",
     "FetchManifestRecord",
     "FileSystemOutputWriter",
     "FakeTokyoMetroGrantsFetcher",
@@ -45,6 +52,7 @@ __all__ = [
     "ObjectStorageWrite",
     "OfficialityLevel",
     "RawArtifactWrite",
+    "RequiredCoverageSummary",
     "SourceCoverageRecord",
     "SourceDocumentCandidate",
     "SourceFamily",
@@ -56,5 +64,7 @@ __all__ = [
     "build_fetch_manifest_db_rows",
     "connector_execution_targets",
     "content_sha256",
+    "source_coverage_failure_record",
+    "summarize_required_coverage",
     "validate_required_coverage_records",
 ]

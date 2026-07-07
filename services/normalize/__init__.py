@@ -5,6 +5,7 @@ from normalize.contracts import (
     NormalizeResult,
     OfficialPoliticalEventCandidate,
     SourceDocument,
+    event_date_conflict_assertion,
 )
 from normalize.normalizer import normalize_grant_program_page
 
@@ -15,5 +16,6 @@ __all__ = [
     "NormalizeResult",
     "OfficialPoliticalEventCandidate",
     "SourceDocument",
+    "event_date_conflict_assertion",
     "normalize_grant_program_page",
 ]

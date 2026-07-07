@@ -85,6 +85,13 @@ def _date_to_json(value: date) -> str:
     return value.isoformat()
 
 
+def _asserted_date_to_json(value: date | str) -> str:
+    if isinstance(value, str):
+        return _date_to_json(_date_from_json(value, "asserted_date"))
+    _validate_date(value, "asserted_date")
+    return _date_to_json(value)
+
+
 def _datetime_from_json(value: object, field_name: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field_name} must be a non-empty ISO-8601 string")
@@ -437,6 +444,33 @@ class EventSourceAssertion:
             "review_state": self.review_state,
             "limitations": list(self.limitations),
         }
+
+
+def event_date_conflict_assertion(
+    *,
+    event_candidate_id: str,
+    source_document_id: str,
+    evidence_item_id: str,
+    asserted_date: date | str,
+    asserted_at: datetime,
+    source_priority: int,
+    confidence: float,
+    limitations: tuple[str, ...],
+    review_state: ReviewState = "needs_review",
+) -> EventSourceAssertion:
+    return EventSourceAssertion(
+        event_candidate_id=event_candidate_id,
+        source_document_id=source_document_id,
+        evidence_item_id=evidence_item_id,
+        asserted_field="scheduled_date",
+        asserted_value=_asserted_date_to_json(asserted_date),
+        asserted_at=asserted_at,
+        source_priority=source_priority,
+        conflict_state="date_mismatch",
+        confidence=confidence,
+        review_state=review_state,
+        limitations=limitations,
+    )
 
 
 @dataclass(frozen=True, slots=True)

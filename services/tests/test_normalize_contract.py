@@ -353,6 +353,28 @@ def test_event_candidate_keeps_multiple_source_assertions_and_conflicts() -> Non
     assert normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json) == candidate
 
 
+def test_date_conflict_helper_preserves_conflicting_source_assertion() -> None:
+    primary_assertion = _event_source_assertion()
+    date_conflict = normalize.event_date_conflict_assertion(
+        event_candidate_id="event-candidate-tokyo-governor-polling-day",
+        source_document_id="source-document-election-aggregator",
+        evidence_item_id="evidence-aggregator-date-1",
+        asserted_date=date(2026, 7, 20),
+        asserted_at=datetime(2026, 7, 7, 9, 45, tzinfo=UTC),
+        source_priority=20,
+        confidence=0.8,
+        limitations=("aggregator date differs from primary notice",),
+    )
+
+    candidate = _official_event_candidate(primary_assertion, date_conflict)
+
+    assert date_conflict.asserted_field == "scheduled_date"
+    assert date_conflict.asserted_value == "2026-07-20"
+    assert date_conflict.conflict_state == "date_mismatch"
+    assert date_conflict.review_state == "needs_review"
+    assert candidate.conflict_states() == ("date_mismatch",)
+
+
 @pytest.mark.parametrize(
     ("asserted_field", "asserted_value", "expected_conflict_state"),
     [
