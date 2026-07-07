@@ -256,3 +256,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 統合 branch `codex/opl-official-political-events-20260707/final-pr` を `origin` に push。
 - GitHub draft PR [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) を `main` 向けに作成。
 - local ledger の `G2PR-008`、`G2PR-009`、`G2PR-010` の PR 欄を draft PR #2 に更新。
+
+## [2026-07-07] review-fix | Align official event taxonomy and handoff state
+
+- PR-level implementation review で `OfficialPoliticalEventCandidate.event_type` が approved taxonomy を検証していないことを Important として確認。
+- `services/normalize/contracts.py` に family 別 event type validation を追加し、typo、scope 外 event、cross-family event type を拒否する test を追加。
+- `official-political-events-ingest-execution-handoff.md` と `index.md` を Remote Gate 後の execution envelope revision 2 / draft PR #2 状態に更新。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 80 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。

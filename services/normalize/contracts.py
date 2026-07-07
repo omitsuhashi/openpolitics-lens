@@ -31,6 +31,36 @@ ConflictState = Literal[
     "status_mismatch",
     "needs_review",
 ]
+EventType = Literal[
+    "election_announced",
+    "election_notice_published",
+    "candidate_filing_opened",
+    "candidate_filing_closed",
+    "campaign_started",
+    "early_voting_started",
+    "polling_day",
+    "vote_counting_started",
+    "result_published",
+    "term_started",
+    "term_expires",
+    "diet_session_convened",
+    "diet_session_ends",
+    "plenary_meeting_scheduled",
+    "committee_meeting_scheduled",
+    "meeting_record_published",
+    "bill_submitted",
+    "vote_held",
+    "assembly_session_scheduled",
+    "petition_received",
+    "minutes_published",
+    "public_comment_opened",
+    "public_comment_closed",
+    "public_comment_result_published",
+    "council_meeting_scheduled",
+    "council_minutes_published",
+    "plan_draft_published",
+    "plan_adopted",
+]
 EVENT_FAMILIES: tuple[str, ...] = (
     "Election",
     "Diet",
@@ -64,6 +94,50 @@ CONFLICT_STATES: tuple[str, ...] = (
     "status_mismatch",
     "needs_review",
 )
+EVENT_TYPES_BY_FAMILY: dict[str, tuple[str, ...]] = {
+    "Election": (
+        "election_announced",
+        "election_notice_published",
+        "candidate_filing_opened",
+        "candidate_filing_closed",
+        "campaign_started",
+        "early_voting_started",
+        "polling_day",
+        "vote_counting_started",
+        "result_published",
+        "term_started",
+        "term_expires",
+    ),
+    "Diet": (
+        "diet_session_convened",
+        "diet_session_ends",
+        "plenary_meeting_scheduled",
+        "committee_meeting_scheduled",
+        "meeting_record_published",
+        "bill_submitted",
+        "vote_held",
+    ),
+    "LocalAssembly": (
+        "assembly_session_scheduled",
+        "plenary_meeting_scheduled",
+        "committee_meeting_scheduled",
+        "bill_submitted",
+        "petition_received",
+        "vote_held",
+        "minutes_published",
+    ),
+    "PublicConsultation": (
+        "public_comment_opened",
+        "public_comment_closed",
+        "public_comment_result_published",
+    ),
+    "AdministrativeDeliberation": (
+        "council_meeting_scheduled",
+        "council_minutes_published",
+        "plan_draft_published",
+        "plan_adopted",
+    ),
+}
 TRACKED_ASSERTION_CONFLICT_STATES: dict[str, str] = {
     "scheduled_date": "date_mismatch",
     "title": "title_mismatch",
@@ -185,6 +259,16 @@ def _validate_choice(field_name: str, value: str, allowed_values: tuple[str, ...
     if value not in allowed_values:
         allowed = ", ".join(allowed_values)
         raise ValueError(f"{field_name} must be one of: {allowed}")
+
+
+def _validate_event_type(event_family: str, event_type: str) -> None:
+    allowed_values = EVENT_TYPES_BY_FAMILY.get(event_family)
+    if allowed_values is None:
+        _validate_choice("event_family", event_family, EVENT_FAMILIES)
+        return
+    if event_type not in allowed_values:
+        allowed = ", ".join(allowed_values)
+        raise ValueError(f"event_type for {event_family} must be one of: {allowed}")
 
 
 def _validate_timezone_aware_datetime(value: datetime, field_name: str) -> None:
@@ -477,7 +561,7 @@ def event_date_conflict_assertion(
 class OfficialPoliticalEventCandidate:
     event_candidate_id: str
     event_family: EventFamily
-    event_type: str
+    event_type: EventType
     jurisdiction_id: str
     jurisdiction_level: str
     source_system: str
@@ -526,6 +610,7 @@ class OfficialPoliticalEventCandidate:
         _validate_date(self.scheduled_date, "scheduled_date")
         _validate_nullable_text(self.scheduled_time, "scheduled_time")
         _validate_choice("event_family", self.event_family, EVENT_FAMILIES)
+        _validate_event_type(self.event_family, self.event_type)
         _validate_choice("event_status", self.event_status, EVENT_STATUSES)
         _validate_choice("date_precision", self.date_precision, DATE_PRECISIONS)
         _validate_confidence(self.confidence, "confidence")

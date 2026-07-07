@@ -55,9 +55,9 @@ git diff --check
 
 ## Remote policy
 
-remote `origin` は `git@github.com:omitsuhashi/openpolitics-lens.git` として存在するが、`gh` CLI は見つからない。Execution envelope は `local_only` とし、push、GitHub Issue 作成、PR 作成は行わない。
+当初の Execution Plan Gate では local-only として実行した。Remote Gate 承認後、Execution envelope revision 2 で `final_pr_push_head` と `final_pr_create_draft` のみを承認済みに更新した。
 
-PR delivery は Remote Gate で扱う。最終 PR merge は常に human-only。
+統合 branch `codex/opl-official-political-events-20260707/final-pr` は `origin` に push 済み。GitHub draft PR [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) は作成済み。GitHub Issue mirror と最終 PR merge は対象外で、merge は常に human-only。
 
 ## Execution Plan Gate evidence
 
@@ -67,7 +67,7 @@ PR delivery は Remote Gate で扱う。最終 PR merge は常に human-only。
 - `reconcile_git_state.py knowledge/wiki/syntheses/official-political-events-ingest-execution-envelope.json --repo . --json`: ok, collisions none
 - `git diff --check`: ok
 - Execution envelope schema: `3`
-- Execution envelope revision: `1`
+- Execution envelope revision: `2`
 - `epic_base.sha`: `c870f7a1e485d62fb413c59084bb2d7cfd61640e`
 
 Observed local state:

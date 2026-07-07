@@ -303,6 +303,57 @@ def test_official_political_event_candidate_round_trips_json_contract() -> None:
     assert normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json) == candidate
 
 
+@pytest.mark.parametrize(
+    ("event_family", "event_type"),
+    [
+        ("Election", "polling_day"),
+        ("Diet", "vote_held"),
+        ("LocalAssembly", "minutes_published"),
+        ("PublicConsultation", "public_comment_opened"),
+        ("AdministrativeDeliberation", "council_meeting_scheduled"),
+    ],
+)
+def test_event_candidate_accepts_approved_event_type_for_family(
+    event_family: str,
+    event_type: str,
+) -> None:
+    candidate = replace(
+        _official_event_candidate(),
+        event_family=event_family,
+        event_type=event_type,
+    )
+
+    assert candidate.event_family == event_family
+    assert candidate.event_type == event_type
+
+
+@pytest.mark.parametrize(
+    ("event_family", "event_type"),
+    [
+        ("Election", "pollingday"),
+        ("Election", "party_rally"),
+        ("Diet", "polling_day"),
+        ("PublicConsultation", "council_meeting_scheduled"),
+    ],
+)
+def test_event_candidate_rejects_unknown_or_cross_family_event_type(
+    event_family: str,
+    event_type: str,
+) -> None:
+    with pytest.raises(ValueError, match="event_type"):
+        replace(
+            _official_event_candidate(),
+            event_family=event_family,
+            event_type=event_type,
+        )
+
+    candidate_json = _official_event_candidate().to_json_dict()
+    candidate_json["event_family"] = event_family
+    candidate_json["event_type"] = event_type
+    with pytest.raises(ValueError, match="event_type"):
+        normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json)
+
+
 def test_event_candidate_keeps_multiple_source_assertions_and_conflicts() -> None:
     primary_assertion = _event_source_assertion()
     date_conflict = _event_source_assertion(
