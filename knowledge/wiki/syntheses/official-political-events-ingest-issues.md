@@ -21,7 +21,7 @@ spec: official-political-events-ingest-spec.md
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-008 | Source Registry と Coverage Ledger の contract を作る | 承認済み | PR_READY | なし | G2PR-009, G2PR-010, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-009 | OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る | 承認済み | PR_READY | G2PR-008 | G2PR-010, G2PR-011, G2PR-012, G2PR-013, G2PR-014, G2PR-015, G2PR-016 | 未作成 | 承認済み | 未作成 |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-010 | 選挙・会議の coverage guard と欠落可視化を実装する | 承認済み | 実行可能 | G2PR-008, G2PR-009 | G2PR-015, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 未実施 | 未作成 |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-010 | 選挙・会議の coverage guard と欠落可視化を実装する | 承認済み | PR_READY | G2PR-008, G2PR-009 | G2PR-015, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-011 | 国会会議録 API connector の fixture ingest を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-012 | 衆議院・参議院 schedule connector の fixture ingest を設計・実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-013 | e-Gov public comment connector の fixture ingest を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
@@ -50,7 +50,7 @@ G2PR-008
   -> G2PR-018
 ```
 
-cycle はない。`G2PR-008` と `G2PR-009` は実装レビュー承認済みで `PR_READY`。現在は `G2PR-010` が実行可能で、`G2PR-011` 以降は後続 issue として依存 issue の完了後に実行可能になる。
+cycle はない。初回 PR 範囲の `G2PR-008`、`G2PR-009`、`G2PR-010` は実装レビュー承認済みで `PR_READY`。`G2PR-011` 以降は後続 issue として依存 issue の完了後に実行可能になる。
 
 ## 初回 PR 実装範囲案
 
@@ -179,6 +179,17 @@ uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 ```
+
+### 実装結果
+
+- branch: `codex/opl-official-political-events-20260707/G2PR-010-election-meeting-coverage-guard`
+- base: `8bc2eaf94adf8bb014ac8d28967ba46ba452c552`
+- head: `2c7fd544d5fb9c4686a1200f023b6f4890f1da80`
+- review range: `8bc2eaf94adf8bb014ac8d28967ba46ba452c552..2c7fd544d5fb9c4686a1200f023b6f4890f1da80`
+- 実装レビュー: 承認済み。初回レビューで empty registry の complete 誤判定と registry 側 duplicate `coverage_key` 未検出が指摘され、修正後レビューで Critical / Important / Minor なし。
+- 実装内容: 必須 coverage summary helper、missing guard、coverage status counts、duplicate `coverage_key` rejection、fetch/parser failure coverage record helper、date conflict assertion helper、0件 event を event absence と断定しない contract を追加した。修正 cycle で `required_registry_configured` と registry duplicate guard を追加した。
+- verification: `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` は 71 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` は passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: live source 取得、PDF/OCR、browser automation、実 connector 連携は後続 issue の対象で、この local contract PR では非対象。
 
 ## G2PR-011: 国会会議録 API connector の fixture ingest を実装する
 

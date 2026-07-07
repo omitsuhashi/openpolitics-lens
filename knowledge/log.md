@@ -236,3 +236,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 初回レビューで conflict state と top-level event 値の整合性不足が指摘され、修正 cycle で `scheduled_date` / `title` / `event_status` の assertion 値と mismatch state の validation を追加した。修正後レビューで Critical / Important / Minor なし。
 - verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 63 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
 - `G2PR-009` の review approval により `G2PR-010` を実行可能にした。
+
+## [2026-07-07] implementation | G2PR-010 election meeting coverage guard
+
+- `G2PR-010` の worker 実装を review gate に通し、worker head `2c7fd544d5fb9c4686a1200f023b6f4890f1da80` を `PR_READY` として記録。
+- 必須 coverage summary helper、missing guard、coverage status counts、duplicate `coverage_key` rejection、fetch/parser failure coverage record helper、date conflict assertion helper、0件 event を event absence と断定しない contract を追加した。
+- 初回レビューで empty registry の complete 誤判定と registry 側 duplicate `coverage_key` 未検出が指摘され、修正 cycle で `required_registry_configured` と registry duplicate guard を追加した。修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 71 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- 初回 PR 範囲 `G2PR-008` から `G2PR-010` はすべて local `PR_READY`。remote write / push / PR 作成は local-only policy により未実施。
