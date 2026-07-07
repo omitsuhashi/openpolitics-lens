@@ -131,6 +131,10 @@ def test_normalize_audit_report_fixture_preserves_official_wording_and_trace(
     assert all(candidate.source_type in AUDIT_REPORT_SOURCE_TYPES for candidate in audit_candidates)
     assert all(candidate.evidence_item_ids for candidate in audit_candidates)
     assert all(
+        candidate.claim_type == normalize.AUDIT_FINDING_CANDIDATE_CLAIM_TYPE
+        for candidate in audit_candidates
+    )
+    assert all(
         {
             "fiscal_year",
             "audited_entity",
@@ -160,6 +164,7 @@ def test_normalize_audit_report_fixture_preserves_official_wording_and_trace(
         first_finding_evidence.location_metadata["audited_entity"]
         == first_payload["audited_entity"]
     )
+    assert all(result.spending_review_signal_candidates == () for result in results)
 
 
 def test_audit_finding_candidate_guard_rejects_app_classification_labels() -> None:

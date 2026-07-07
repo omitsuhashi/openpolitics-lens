@@ -258,6 +258,84 @@ def test_warning_and_claim_catalogs_are_source_family_wide() -> None:
         normalize.claim_catalog_entry("unknown_claim", source_family="tokyo_metro_grants")
 
 
+def test_audit_finding_and_spending_review_signal_candidates_use_separate_storage_claims() -> None:
+    audit_entry = normalize.candidate_claim_catalog_entry(
+        normalize.AUDIT_FINDING_CANDIDATE_CLAIM_TYPE,
+    )
+    signal_entry = normalize.candidate_claim_catalog_entry(
+        normalize.SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE,
+    )
+
+    assert audit_entry.storage_table == "audit_finding_candidates"
+    assert signal_entry.storage_table == "spending_review_signal_candidates"
+    assert audit_entry.claim_type != signal_entry.claim_type
+    assert audit_entry.origin == "official_audit_source"
+    assert signal_entry.origin == "app_calculated"
+
+
+def test_spending_review_signal_candidate_serializes_internal_review_contract_only() -> None:
+    computed_at = datetime(2026, 7, 7, 10, 30, tzinfo=UTC)
+
+    candidate = normalize.SpendingReviewSignalCandidate(
+        spending_review_signal_candidate_id="signal-candidate-1",
+        signal_type="audit_finding_linked",
+        target_ref="audit_finding_candidate:audit-1",
+        method_version="phase0.audit-signal-separation.v1",
+        supporting_evidence_item_ids=("evidence-support-1",),
+        counter_evidence_item_ids=("evidence-counter-1",),
+        limitations=("監査指摘との関連候補であり、違法性や無駄遣いを判定しない",),
+        computed_at=computed_at,
+        review_state="needs_human_review",
+    )
+
+    payload = candidate.to_json_dict()
+
+    assert payload == {
+        "contract_type": "SpendingReviewSignalCandidate",
+        "spending_review_signal_candidate_id": "signal-candidate-1",
+        "claim_type": "app_calculated_review_signal_candidate",
+        "signal_type": "audit_finding_linked",
+        "target_ref": "audit_finding_candidate:audit-1",
+        "method_version": "phase0.audit-signal-separation.v1",
+        "supporting_evidence_item_ids": ["evidence-support-1"],
+        "counter_evidence_item_ids": ["evidence-counter-1"],
+        "limitations": ["監査指摘との関連候補であり、違法性や無駄遣いを判定しない"],
+        "computed_at": "2026-07-07T10:30:00Z",
+        "review_state": "needs_human_review",
+        "public_visibility": "internal_only",
+    }
+    assert payload["contract_type"] != "SpendingReviewSignal"
+    assert "score" not in payload
+    assert "severity_band" not in payload
+    assert not hasattr(candidate, "score")
+    json.dumps(payload, ensure_ascii=False)
+
+
+def test_spending_review_signal_candidate_rejects_public_or_untraced_state() -> None:
+    kwargs = {
+        "spending_review_signal_candidate_id": "signal-candidate-1",
+        "signal_type": "audit_finding_linked",
+        "target_ref": "audit_finding_candidate:audit-1",
+        "method_version": "phase0.audit-signal-separation.v1",
+        "supporting_evidence_item_ids": ("evidence-support-1",),
+        "counter_evidence_item_ids": (),
+        "limitations": ("反証 evidence は未接続",),
+        "computed_at": datetime(2026, 7, 7, 10, 30, tzinfo=UTC),
+        "review_state": "needs_human_review",
+    }
+
+    with pytest.raises(ValueError, match="internal_only"):
+        normalize.SpendingReviewSignalCandidate(**kwargs, public_visibility="public")
+
+    with pytest.raises(ValueError, match="supporting_evidence_item_ids"):
+        normalize.SpendingReviewSignalCandidate(
+            **{**kwargs, "supporting_evidence_item_ids": ()},
+        )
+
+    with pytest.raises(ValueError, match="limitations"):
+        normalize.SpendingReviewSignalCandidate(**{**kwargs, "limitations": ()})
+
+
 @pytest.mark.parametrize(
     "case",
     [

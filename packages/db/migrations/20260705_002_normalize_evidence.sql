@@ -121,3 +121,78 @@ comment on column evidence_claims.claim_type is
     'Claim type catalog is enforced by normalize service contract tests. Initial Phase 0 catalog includes grant_program_page_title_observed, subsidy_program_candidate_observed, assembly_member_name_observed, bill_decision_observed, petition_status_observed, speech_text_observed, election_result_observed, political_group_registry_observed, political_fund_report_metadata_observed, budget_document_metadata_observed, budget_table_cell_observed, procurement_search_row_observed, audit_report_finding_text_observed, and audit_measure_status_observed.';
 comment on column evidence_claims.predicate is
     'Predicate catalog is enforced by normalize service contract tests and paired with claim_type in code.';
+
+create table if not exists audit_finding_candidates (
+    audit_finding_candidate_id uuid primary key,
+    source_document_id uuid not null references source_documents (source_document_id)
+        on delete restrict,
+    claim_type text not null default 'audit_finding_candidate_observed'
+        check (claim_type = 'audit_finding_candidate_observed'),
+    source_type text not null check (
+        source_type in (
+            'financial_aid_organization_audit_report',
+            'comprehensive_external_audit_report',
+            'audit_measure_status_report'
+        )
+    ),
+    fiscal_year text not null,
+    audited_entity text not null,
+    finding_text text not null,
+    measure_status text not null,
+    evidence_item_ids uuid[] not null check (cardinality(evidence_item_ids) > 0),
+    field_evidence_item_ids jsonb not null,
+    review_state text not null default 'machine_extracted'
+        check (review_state in ('machine_extracted', 'human_verified', 'rejected')),
+    created_at timestamptz not null default now()
+);
+
+create index if not exists audit_finding_candidates_source_document_idx
+    on audit_finding_candidates (source_document_id);
+
+comment on table audit_finding_candidates is
+    'Official audit source findings kept separate from app-calculated review signals.';
+comment on column audit_finding_candidates.claim_type is
+    'Candidate claim type is audit_finding_candidate_observed and is not reused for app-calculated review signal candidates.';
+comment on column audit_finding_candidates.finding_text is
+    'Official finding wording copied from source evidence without app-side evaluation labels.';
+comment on column audit_finding_candidates.evidence_item_ids is
+    'EvidenceItem IDs for official source spans that support this candidate.';
+comment on column audit_finding_candidates.field_evidence_item_ids is
+    'JSON object mapping official fields such as fiscal_year, audited_entity, finding_text, and measure_status to EvidenceItem IDs.';
+
+create table if not exists spending_review_signal_candidates (
+    spending_review_signal_candidate_id uuid primary key,
+    claim_type text not null default 'app_calculated_review_signal_candidate'
+        check (claim_type = 'app_calculated_review_signal_candidate'),
+    signal_type text not null,
+    target_ref text not null,
+    method_version text not null,
+    supporting_evidence_item_ids uuid[] not null
+        check (cardinality(supporting_evidence_item_ids) > 0),
+    counter_evidence_item_ids uuid[] not null default array[]::uuid[],
+    limitations text[] not null check (cardinality(limitations) > 0),
+    computed_at timestamptz not null,
+    review_state text not null default 'needs_human_review'
+        check (review_state in ('needs_human_review', 'human_verified', 'rejected')),
+    public_visibility text not null default 'internal_only'
+        check (public_visibility = 'internal_only'),
+    created_at timestamptz not null default now()
+);
+
+create index if not exists spending_review_signal_candidates_target_ref_idx
+    on spending_review_signal_candidates (target_ref);
+
+comment on table spending_review_signal_candidates is
+    'Internal-only app-calculated spending review signal candidates; not public SpendingReviewSignal rows and not scoring output.';
+comment on column spending_review_signal_candidates.claim_type is
+    'Candidate claim type is app_calculated_review_signal_candidate and is not reused for official audit finding candidates.';
+comment on column spending_review_signal_candidates.method_version is
+    'Versioned app method used to compute this internal candidate.';
+comment on column spending_review_signal_candidates.supporting_evidence_item_ids is
+    'EvidenceItem IDs that support the app-calculated candidate.';
+comment on column spending_review_signal_candidates.counter_evidence_item_ids is
+    'EvidenceItem IDs that weaken or counter the app-calculated candidate.';
+comment on column spending_review_signal_candidates.limitations is
+    'Explicit limitations required before review; candidates do not assert waste, fraud, illegality, or score.';
+comment on column spending_review_signal_candidates.public_visibility is
+    'Guard fixed to internal_only so Phase 0 candidates do not feed public UI, score, or ranking.';

@@ -53,6 +53,17 @@ class ClaimCatalogEntry:
     source_families: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class CandidateClaimCatalogEntry:
+    claim_type: str
+    storage_table: str
+    origin: str
+
+
+AUDIT_FINDING_CANDIDATE_CLAIM_TYPE = "audit_finding_candidate_observed"
+SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE = "app_calculated_review_signal_candidate"
+INTERNAL_ONLY_PUBLIC_VISIBILITY = "internal_only"
+
 _CLAIM_CATALOG_ENTRIES: tuple[ClaimCatalogEntry, ...] = (
     ClaimCatalogEntry(
         claim_type="grant_program_page_title_observed",
@@ -125,9 +136,24 @@ _CLAIM_CATALOG_ENTRIES: tuple[ClaimCatalogEntry, ...] = (
         source_families=("tokyo_audit_reports",),
     ),
 )
+_CANDIDATE_CLAIM_CATALOG_ENTRIES: tuple[CandidateClaimCatalogEntry, ...] = (
+    CandidateClaimCatalogEntry(
+        claim_type=AUDIT_FINDING_CANDIDATE_CLAIM_TYPE,
+        storage_table="audit_finding_candidates",
+        origin="official_audit_source",
+    ),
+    CandidateClaimCatalogEntry(
+        claim_type=SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE,
+        storage_table="spending_review_signal_candidates",
+        origin="app_calculated",
+    ),
+)
 
 CLAIM_TYPE_CATALOG: dict[str, ClaimCatalogEntry] = {
     entry.claim_type: entry for entry in _CLAIM_CATALOG_ENTRIES
+}
+CANDIDATE_CLAIM_TYPE_CATALOG: dict[str, CandidateClaimCatalogEntry] = {
+    entry.claim_type: entry for entry in _CANDIDATE_CLAIM_CATALOG_ENTRIES
 }
 PREDICATE_CATALOG: frozenset[str] = frozenset(entry.predicate for entry in _CLAIM_CATALOG_ENTRIES)
 AUDIT_REPORT_SOURCE_TYPES: frozenset[str] = frozenset(
@@ -150,6 +176,20 @@ AUDIT_FINDING_REQUIRED_TRACE_FIELDS: frozenset[str] = frozenset(
         "audited_entity",
         "finding_text",
         "measure_status",
+    }
+)
+AUDIT_FINDING_REVIEW_STATES: frozenset[str] = frozenset(
+    {
+        "machine_extracted",
+        "human_verified",
+        "rejected",
+    }
+)
+SPENDING_REVIEW_SIGNAL_CANDIDATE_REVIEW_STATES: frozenset[str] = frozenset(
+    {
+        "needs_human_review",
+        "human_verified",
+        "rejected",
     }
 )
 
@@ -181,6 +221,23 @@ def claim_catalog_entry(
 
     if source_family is not None and source_family not in entry.source_families:
         msg = f"source_family is not allowed for claim_type {claim_type}: {source_family}"
+        raise ValueError(msg)
+
+    return entry
+
+
+def candidate_claim_catalog_entry(
+    claim_type: str,
+    *,
+    storage_table: str | None = None,
+) -> CandidateClaimCatalogEntry:
+    entry = CANDIDATE_CLAIM_TYPE_CATALOG.get(claim_type)
+    if entry is None:
+        msg = f"unknown candidate claim_type: {claim_type}"
+        raise ValueError(msg)
+
+    if storage_table is not None and storage_table != entry.storage_table:
+        msg = f"storage_table does not match candidate claim_type catalog: {claim_type}"
         raise ValueError(msg)
 
     return entry
@@ -399,10 +456,19 @@ class AuditFindingCandidate:
     measure_status: str
     evidence_item_ids: tuple[str, ...]
     field_evidence_item_ids: JsonDict
+    review_state: str = "machine_extracted"
+    claim_type: str = AUDIT_FINDING_CANDIDATE_CLAIM_TYPE
 
     def __post_init__(self) -> None:
+        candidate_claim_catalog_entry(
+            self.claim_type,
+            storage_table="audit_finding_candidates",
+        )
         if self.source_type not in AUDIT_REPORT_SOURCE_TYPES:
             msg = f"unsupported audit report source_type: {self.source_type}"
+            raise ValueError(msg)
+        if self.review_state not in AUDIT_FINDING_REVIEW_STATES:
+            msg = f"unsupported AuditFindingCandidate review_state: {self.review_state}"
             raise ValueError(msg)
         if not self.evidence_item_ids:
             msg = "AuditFindingCandidate requires evidence_item_ids"
@@ -429,6 +495,7 @@ class AuditFindingCandidate:
     def to_json_dict(self) -> JsonDict:
         return {
             "audit_finding_candidate_id": self.audit_finding_candidate_id,
+            "claim_type": self.claim_type,
             "source_document_id": self.source_document_id,
             "source_type": self.source_type,
             "fiscal_year": self.fiscal_year,
@@ -437,6 +504,7 @@ class AuditFindingCandidate:
             "measure_status": self.measure_status,
             "evidence_item_ids": list(self.evidence_item_ids),
             "field_evidence_item_ids": dict(self.field_evidence_item_ids),
+            "review_state": self.review_state,
         }
 
 
@@ -472,11 +540,87 @@ def build_audit_finding_candidate(
 
 
 @dataclass(frozen=True, slots=True)
+class SpendingReviewSignalCandidate:
+    spending_review_signal_candidate_id: str
+    signal_type: str
+    target_ref: str
+    method_version: str
+    supporting_evidence_item_ids: tuple[str, ...]
+    counter_evidence_item_ids: tuple[str, ...]
+    limitations: tuple[str, ...]
+    computed_at: datetime
+    review_state: str = "needs_human_review"
+    public_visibility: str = INTERNAL_ONLY_PUBLIC_VISIBILITY
+    claim_type: str = SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE
+
+    def __post_init__(self) -> None:
+        candidate_claim_catalog_entry(
+            self.claim_type,
+            storage_table="spending_review_signal_candidates",
+        )
+        if not self.signal_type.strip():
+            msg = "SpendingReviewSignalCandidate signal_type is required"
+            raise ValueError(msg)
+        if not self.target_ref.strip():
+            msg = "SpendingReviewSignalCandidate target_ref is required"
+            raise ValueError(msg)
+        if not self.method_version.strip():
+            msg = "SpendingReviewSignalCandidate method_version is required"
+            raise ValueError(msg)
+        if not self.supporting_evidence_item_ids:
+            msg = "SpendingReviewSignalCandidate requires supporting_evidence_item_ids"
+            raise ValueError(msg)
+        if not self.limitations:
+            msg = "SpendingReviewSignalCandidate requires limitations"
+            raise ValueError(msg)
+        if self.review_state not in SPENDING_REVIEW_SIGNAL_CANDIDATE_REVIEW_STATES:
+            msg = f"unsupported SpendingReviewSignalCandidate review_state: {self.review_state}"
+            raise ValueError(msg)
+        if self.public_visibility != INTERNAL_ONLY_PUBLIC_VISIBILITY:
+            msg = "SpendingReviewSignalCandidate public_visibility must be internal_only"
+            raise ValueError(msg)
+
+        supporting_ids = tuple(str(item_id) for item_id in self.supporting_evidence_item_ids)
+        counter_ids = tuple(str(item_id) for item_id in self.counter_evidence_item_ids)
+        limitations = tuple(str(limitation) for limitation in self.limitations)
+        if any(not item_id.strip() for item_id in supporting_ids):
+            msg = "SpendingReviewSignalCandidate supporting_evidence_item_ids must be non-empty"
+            raise ValueError(msg)
+        if any(not item_id.strip() for item_id in counter_ids):
+            msg = "SpendingReviewSignalCandidate counter_evidence_item_ids must be non-empty"
+            raise ValueError(msg)
+        if any(not limitation.strip() for limitation in limitations):
+            msg = "SpendingReviewSignalCandidate limitations must be non-empty"
+            raise ValueError(msg)
+
+        object.__setattr__(self, "supporting_evidence_item_ids", supporting_ids)
+        object.__setattr__(self, "counter_evidence_item_ids", counter_ids)
+        object.__setattr__(self, "limitations", limitations)
+
+    def to_json_dict(self) -> JsonDict:
+        return {
+            "contract_type": "SpendingReviewSignalCandidate",
+            "spending_review_signal_candidate_id": self.spending_review_signal_candidate_id,
+            "claim_type": self.claim_type,
+            "signal_type": self.signal_type,
+            "target_ref": self.target_ref,
+            "method_version": self.method_version,
+            "supporting_evidence_item_ids": list(self.supporting_evidence_item_ids),
+            "counter_evidence_item_ids": list(self.counter_evidence_item_ids),
+            "limitations": list(self.limitations),
+            "computed_at": _datetime_to_json(self.computed_at),
+            "review_state": self.review_state,
+            "public_visibility": self.public_visibility,
+        }
+
+
+@dataclass(frozen=True, slots=True)
 class NormalizeResult:
     source_document: SourceDocument
     evidence_items: tuple[EvidenceItem, ...]
     evidence_claims: tuple[EvidenceClaim, ...]
     audit_finding_candidates: tuple[AuditFindingCandidate, ...] = ()
+    spending_review_signal_candidates: tuple[SpendingReviewSignalCandidate, ...] = ()
 
     def to_json_dict(self) -> JsonDict:
         return {
@@ -485,5 +629,8 @@ class NormalizeResult:
             "evidence_claims": [claim.to_json_dict() for claim in self.evidence_claims],
             "audit_finding_candidates": [
                 candidate.to_json_dict() for candidate in self.audit_finding_candidates
+            ],
+            "spending_review_signal_candidates": [
+                candidate.to_json_dict() for candidate in self.spending_review_signal_candidates
             ],
         }
