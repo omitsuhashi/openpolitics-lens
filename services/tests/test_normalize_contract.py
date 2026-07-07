@@ -98,6 +98,9 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
         "raw_artifact_path": record.raw_artifact_path,
         "extraction_method": "html_title",
         "confidence": 1.0,
+        "location_metadata": {},
+        "parse_warnings": [],
+        "extraction_artifact_path": None,
     }
 
     assert len(result.evidence_claims) == 1
@@ -138,6 +141,193 @@ def test_normalize_keeps_quote_text_as_decoded_source_span_and_normalizes_title(
         raw_title.encode()
     )
     assert result.evidence_claims[0].object_value == normalized_title
+
+
+def test_evidence_item_serializes_locator_warnings_and_extraction_artifact_path() -> None:
+    pdf_item = normalize.EvidenceItem(
+        evidence_item_id="pdf-item",
+        source_document_id="source-doc",
+        location_type="page_span",
+        location_value="p.4",
+        source_span_start=120,
+        source_span_end=180,
+        quote_text="監査指摘本文",
+        normalized_text="監査指摘本文",
+        raw_artifact_path="raw/jp-tokyo/tokyo_audit_reports/2026/07/report.pdf",
+        extraction_method="pdf_text_layer",
+        confidence=0.92,
+        location_metadata={"page_number": 4, "bbox": [12.5, 20.0, 300.0, 84.0]},
+        parse_warnings=("pdf_text_layer_missing",),
+        extraction_artifact_path="derived/jp-tokyo/tokyo_audit_reports/report.txt",
+    )
+    table_item = normalize.EvidenceItem(
+        evidence_item_id="table-item",
+        source_document_id="source-doc",
+        location_type="table_cell",
+        location_value="table[2]/row[5]/cell[3]",
+        source_span_start=48,
+        source_span_end=56,
+        quote_text="1,200",
+        normalized_text="1200",
+        raw_artifact_path="raw/jp-tokyo/tokyo_budget_settlement/2026/07/budget.pdf",
+        extraction_method="table_extraction",
+        confidence=0.86,
+        location_metadata={
+            "page_number": 12,
+            "table_index": 2,
+            "row_index": 5,
+            "column_index": 3,
+        },
+        parse_warnings=("table_structure_inferred", "amount_unit_ambiguous"),
+        extraction_artifact_path="derived/jp-tokyo/tokyo_budget_settlement/table-2.json",
+    )
+    search_snapshot_item = normalize.EvidenceItem(
+        evidence_item_id="search-item",
+        source_document_id="source-doc",
+        location_type="api_record",
+        location_value="result-row-7",
+        source_span_start=0,
+        source_span_end=42,
+        quote_text="検索結果行",
+        normalized_text="検索結果行",
+        raw_artifact_path="raw/jp-tokyo/tokyo_procurement/2026/07/search.html",
+        extraction_method="search_ui_snapshot",
+        confidence=0.9,
+        location_metadata={
+            "search_form_url": "https://example.metro.tokyo.lg.jp/search",
+            "query_parameters": {"keyword": "委託"},
+            "page_number": 1,
+            "sort_order": "published_at_desc",
+            "snapshot_timestamp": "2026-07-07T00:00:00Z",
+            "result_row_locator": "tr[data-row='7']",
+        },
+        parse_warnings=("search_ui_snapshot",),
+    )
+
+    assert pdf_item.to_json_dict()["location_metadata"] == {
+        "page_number": 4,
+        "bbox": [12.5, 20.0, 300.0, 84.0],
+    }
+    assert table_item.to_json_dict()["parse_warnings"] == [
+        "table_structure_inferred",
+        "amount_unit_ambiguous",
+    ]
+    assert search_snapshot_item.to_json_dict()["extraction_artifact_path"] is None
+    assert normalize.can_promote_to_evidence_claim(search_snapshot_item)
+    json.dumps(
+        {
+            "pdf": pdf_item.to_json_dict(),
+            "table": table_item.to_json_dict(),
+            "search": search_snapshot_item.to_json_dict(),
+        },
+        ensure_ascii=False,
+    )
+
+
+def test_warning_and_claim_catalogs_are_source_family_wide() -> None:
+    assert {
+        "pdf_text_layer_missing",
+        "ocr_low_confidence",
+        "table_structure_inferred",
+        "search_ui_snapshot",
+    }.issubset(normalize.WARNING_CATALOG)
+
+    assert (
+        normalize.claim_catalog_entry(
+            "grant_program_page_title_observed",
+            source_family="tokyo_metro_grants",
+        ).predicate
+        == "observed_page_title"
+    )
+    assert (
+        normalize.claim_catalog_entry(
+            "audit_report_finding_text_observed",
+            source_family="tokyo_audit_reports",
+        ).predicate
+        == "observed_audit_finding_text"
+    )
+    assert (
+        normalize.claim_catalog_entry(
+            "procurement_search_row_observed",
+            source_family="tokyo_procurement",
+        ).predicate
+        == "observed_procurement_search_row"
+    )
+
+    with pytest.raises(ValueError, match="unknown claim_type"):
+        normalize.claim_catalog_entry("unknown_claim", source_family="tokyo_metro_grants")
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "missing_locator",
+        "low_confidence",
+        "search_snapshot_missing_metadata",
+    ],
+)
+def test_low_confidence_or_missing_locator_evidence_does_not_promote_to_claim(
+    case: str,
+) -> None:
+    if case == "missing_locator":
+        evidence_item = normalize.EvidenceItem(
+            evidence_item_id="missing-locator",
+            source_document_id="source-doc",
+            location_type="page_span",
+            location_value="",
+            source_span_start=10,
+            source_span_end=20,
+            quote_text="監査指摘本文",
+            normalized_text="監査指摘本文",
+            raw_artifact_path="raw/jp-tokyo/tokyo_audit_reports/2026/07/report.pdf",
+            extraction_method="pdf_text_layer",
+            confidence=0.92,
+            location_metadata={},
+        )
+    elif case == "low_confidence":
+        evidence_item = normalize.EvidenceItem(
+            evidence_item_id="low-confidence",
+            source_document_id="source-doc",
+            location_type="page_span",
+            location_value="p.2",
+            source_span_start=10,
+            source_span_end=20,
+            quote_text="OCR本文",
+            normalized_text="OCR本文",
+            raw_artifact_path="raw/jp-tokyo/tokyo_audit_reports/2026/07/report.pdf",
+            extraction_method="ocr",
+            confidence=0.61,
+            location_metadata={"page_number": 2},
+            parse_warnings=("ocr_low_confidence",),
+        )
+    else:
+        evidence_item = normalize.EvidenceItem(
+            evidence_item_id="search-snapshot-missing-metadata",
+            source_document_id="source-doc",
+            location_type="api_record",
+            location_value="result-row-7",
+            source_span_start=0,
+            source_span_end=42,
+            quote_text="検索結果行",
+            normalized_text="検索結果行",
+            raw_artifact_path="raw/jp-tokyo/tokyo_procurement/2026/07/search.html",
+            extraction_method="search_ui_snapshot",
+            confidence=0.9,
+            location_metadata={"page_number": 1},
+            parse_warnings=("search_ui_snapshot",),
+        )
+
+    assert not normalize.can_promote_to_evidence_claim(evidence_item)
+
+    with pytest.raises(ValueError, match="not eligible for EvidenceClaim"):
+        normalize.build_observed_claim(
+            evidence_claim_id="claim-id",
+            claim_type="audit_report_finding_text_observed",
+            subject_ref="source-doc",
+            object_value=evidence_item.normalized_text,
+            evidence_item=evidence_item,
+            source_family="tokyo_audit_reports",
+        )
 
 
 def test_normalize_does_not_infer_non_goal_claims_from_body_text() -> None:

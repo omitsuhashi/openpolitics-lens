@@ -9,6 +9,7 @@ from normalize.contracts import (
     EvidenceItem,
     NormalizeResult,
     SourceDocument,
+    build_observed_claim,
 )
 
 
@@ -170,18 +171,13 @@ def _build_title_claim(
         evidence_item.normalized_text,
     )
 
-    return EvidenceClaim(
+    return build_observed_claim(
         evidence_claim_id=evidence_claim_id,
         claim_type="grant_program_page_title_observed",
         subject_ref=source_document.source_document_id,
-        predicate="observed_page_title",
-        object_ref=None,
         object_value=evidence_item.normalized_text,
-        event_date=None,
-        amount=None,
-        currency=None,
-        evidence_item_id=evidence_item.evidence_item_id,
-        review_state="machine_extracted",
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
     )
 
 

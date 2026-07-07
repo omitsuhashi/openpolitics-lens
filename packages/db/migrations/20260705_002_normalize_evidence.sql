@@ -47,6 +47,24 @@ create table if not exists evidence_items (
     raw_artifact_path text not null,
     extraction_method text not null,
     confidence numeric(5,4) not null check (confidence >= 0 and confidence <= 1),
+    location_metadata jsonb not null default '{}'::jsonb,
+    parse_warnings text[] not null default array[]::text[] check (
+        parse_warnings <@ array[
+            'pdf_text_layer_missing',
+            'ocr_required',
+            'ocr_low_confidence',
+            'table_structure_inferred',
+            'merged_cell_or_header_inferred',
+            'multi_page_table',
+            'amount_unit_ambiguous',
+            'name_or_org_ocr_ambiguous',
+            'entity_resolution_required',
+            'search_ui_snapshot',
+            'meaning_not_interpreted',
+            'source_layout_unverified'
+        ]::text[]
+    ),
+    extraction_artifact_path text,
     created_at timestamptz not null default now(),
     unique (
         source_document_id,
@@ -64,19 +82,25 @@ create index if not exists evidence_items_source_document_idx
 comment on table evidence_items is
     'Machine-extracted source spans that support directly observable claims.';
 comment on column evidence_items.source_span_start is
-    'Inclusive raw HTML bytes offset for the beginning of quote_text.';
+    'Inclusive raw HTML bytes offset, or PDF / table extraction artifact text offset, for the beginning of quote_text.';
 comment on column evidence_items.source_span_end is
-    'Exclusive raw HTML bytes offset for the end of quote_text.';
+    'Exclusive raw HTML bytes offset, or PDF / table extraction artifact text offset, for the end of quote_text.';
 comment on column evidence_items.raw_artifact_path is
     'Back-reference to the immutable raw artifact path used for source inspection.';
+comment on column evidence_items.location_metadata is
+    'Source-family-specific locator metadata such as PDF page/bbox, table cell, or search snapshot conditions.';
+comment on column evidence_items.parse_warnings is
+    'Phase 0 parser warning catalog for lossy, inferred, ambiguous, or review-required extraction.';
+comment on column evidence_items.extraction_artifact_path is
+    'Intermediate artifact path for PDF text extraction, OCR output, or table extraction output.';
 
 create table if not exists evidence_claims (
     evidence_claim_id uuid primary key,
     evidence_item_id uuid not null references evidence_items (evidence_item_id)
         on delete restrict,
-    claim_type text not null check (claim_type in ('grant_program_page_title_observed')),
+    claim_type text not null,
     subject_ref text not null,
-    predicate text not null check (predicate in ('observed_page_title')),
+    predicate text not null,
     object_ref text,
     object_value text not null,
     event_date date,
@@ -92,4 +116,8 @@ create index if not exists evidence_claims_evidence_item_idx
     on evidence_claims (evidence_item_id);
 
 comment on table evidence_claims is
-    'Minimal claims directly observable from evidence items; initial scope is page title observation.';
+    'Minimal claims directly observable from evidence items.';
+comment on column evidence_claims.claim_type is
+    'Claim type catalog is enforced by normalize service contract tests. Initial Phase 0 catalog includes grant_program_page_title_observed, subsidy_program_candidate_observed, assembly_member_name_observed, bill_decision_observed, petition_status_observed, speech_text_observed, election_result_observed, political_group_registry_observed, political_fund_report_metadata_observed, budget_document_metadata_observed, budget_table_cell_observed, procurement_search_row_observed, audit_report_finding_text_observed, and audit_measure_status_observed.';
+comment on column evidence_claims.predicate is
+    'Predicate catalog is enforced by normalize service contract tests and paired with claim_type in code.';
