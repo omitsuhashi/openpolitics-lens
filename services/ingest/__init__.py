@@ -31,6 +31,12 @@ from ingest.phase0_sources import (
     summarize_phase0_fixture_coverage,
     validate_normal_test_fixture_metadata,
 )
+from ingest.political_funds import (
+    PHASE0_POLITICAL_FUNDS_FIXTURES,
+    PoliticalFundsFixtureProbe,
+    build_tokyo_political_funds_fixture_probe,
+    can_generate_funding_contact_from_political_funds_probe,
+)
 from ingest.storage_smoke import (
     S3CompatibleObjectStorageClient,
     StorageSmokeError,
@@ -100,9 +106,11 @@ __all__ = [
     "ObjectStorageWrite",
     "PHASE0_COVERAGE_TARGETS",
     "PHASE0_FIXTURE_CATALOG",
+    "PHASE0_POLITICAL_FUNDS_FIXTURES",
     "PHASE0_ROADMAP_SOURCE_LABELS",
     "PHASE0_SOURCE_REGISTRY",
     "Phase0SourceRegistryEntry",
+    "PoliticalFundsFixtureProbe",
     "RawArtifactWrite",
     "S3CompatibleObjectStorageClient",
     "SourceDocumentCandidate",
@@ -131,6 +139,8 @@ __all__ = [
     "build_tokyo_assembly_bill_decision_fixture_records",
     "build_tokyo_assembly_records_fixture_probe",
     "build_tokyo_election_fixture_manifest_records",
+    "build_tokyo_political_funds_fixture_probe",
+    "can_generate_funding_contact_from_political_funds_probe",
     "content_sha256",
     "run_storage_smoke",
     "summarize_phase0_fixture_coverage",
