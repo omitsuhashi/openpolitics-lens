@@ -260,3 +260,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-003-input-packet.json`、`phase0-remainder-p0r-003-execution-envelope.json`、`phase0-remainder-p0r-003-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001` と `P0R-002` も packet / envelope に含めた。
 - `P0R-002` head `a66fca34b24a965fae35d2611abf023a1b69c941` を blocker head base とし、`P0R-003` branch をそこから作る方針にした。
 - 実行対象は Roadmap 対象 source 7 系統の source registry、fixture metadata、coverage target、fixture harness に限定し、individual source probe、live acquisition、PDF/OCR 実行は非対象に残した。
+
+## [2026-07-07] implementation | P0R-003 source registry harness
+
+- `P0R-003` の worker 実装を review gate に通し、head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を local `PR_READY` として記録。
+- `services/ingest/phase0_sources.py` を追加し、Roadmap 対象 source 7 系統の source registry、fixture metadata、coverage target、fixture coverage summary、通常 test の forbidden operation guard を実装した。
+- `ingest.__all__` から registry / fixture harness を export し、`P0R-004` から `P0R-010` が同じ registry / harness を参照できるようにした。
+- verification は `uv run pytest -q` 65 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- individual source probe fixture / parser は未実装のまま残し、`P0R-004` から `P0R-010` の blocker を解除して実行可能 issue とした。
