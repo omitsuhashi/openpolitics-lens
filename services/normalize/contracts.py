@@ -96,6 +96,11 @@ _CLAIM_CATALOG_ENTRIES: tuple[ClaimCatalogEntry, ...] = (
         source_families=("tokyo_assembly_records_bills",),
     ),
     ClaimCatalogEntry(
+        claim_type="election_candidate_observed",
+        predicate="observed_election_candidate",
+        source_families=("tokyo_elections",),
+    ),
+    ClaimCatalogEntry(
         claim_type="election_result_observed",
         predicate="observed_election_result",
         source_families=("tokyo_elections",),
@@ -156,6 +161,12 @@ CANDIDATE_CLAIM_TYPE_CATALOG: dict[str, CandidateClaimCatalogEntry] = {
     entry.claim_type: entry for entry in _CANDIDATE_CLAIM_CATALOG_ENTRIES
 }
 PREDICATE_CATALOG: frozenset[str] = frozenset(entry.predicate for entry in _CLAIM_CATALOG_ENTRIES)
+ELECTION_ENTITY_MERGE_REF_PREFIXES: tuple[str, ...] = (
+    "person:",
+    "political_group:",
+    "party_branch:",
+    "support_group:",
+)
 AUDIT_REPORT_SOURCE_TYPES: frozenset[str] = frozenset(
     {
         "financial_aid_organization_audit_report",
@@ -241,6 +252,38 @@ def candidate_claim_catalog_entry(
         raise ValueError(msg)
 
     return entry
+
+
+@dataclass(frozen=True, slots=True)
+class ElectionCandidateObservation:
+    election_name: str
+    district: str
+    candidate_name: str
+    votes: int | None
+    source_url: str
+    retrieved_at: datetime
+    source_locator: str
+    entity_ref: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.election_name.strip():
+            msg = "election_name is required"
+            raise ValueError(msg)
+        if not self.district.strip():
+            msg = "district is required"
+            raise ValueError(msg)
+        if not self.candidate_name.strip():
+            msg = "candidate_name is required"
+            raise ValueError(msg)
+        if self.votes is not None and self.votes < 0:
+            msg = "votes must be non-negative"
+            raise ValueError(msg)
+        if not self.source_url.startswith("https://"):
+            msg = "source_url must be an https URL"
+            raise ValueError(msg)
+        if not self.source_locator.strip():
+            msg = "source_locator is required"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True, slots=True)
@@ -436,6 +479,19 @@ def build_observed_claim(
         evidence_item_id=evidence_item.evidence_item_id,
         review_state=review_state,
     )
+
+
+def validate_tokyo_election_claims_do_not_merge_entities(
+    evidence_claims: tuple[EvidenceClaim, ...] | list[EvidenceClaim],
+) -> None:
+    for claim in evidence_claims:
+        refs = (claim.subject_ref, claim.object_ref or "")
+        if any(ref.startswith(ELECTION_ENTITY_MERGE_REF_PREFIXES) for ref in refs):
+            msg = "tokyo election claims must not carry entity merge refs"
+            raise ValueError(msg)
+        if claim.object_ref is not None:
+            msg = "tokyo election claims must not carry entity merge refs"
+            raise ValueError(msg)
 
 
 def validate_audit_finding_no_app_classification(labels: Iterable[str]) -> None:

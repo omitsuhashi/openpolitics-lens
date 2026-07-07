@@ -11,10 +11,13 @@ from ingest.phase0_sources import (
     PHASE0_ROADMAP_SOURCE_LABELS,
     PHASE0_SOURCE_REGISTRY,
     REQUIRED_PHASE0_COMPLETION_SOURCE_FAMILIES,
+    TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES,
+    TOKYO_ELECTION_RESULT_FIXTURES,
     FixtureCoverageSample,
     FixtureMetadata,
     build_fixture_coverage_sample,
     build_phase0_fixture_report,
+    build_tokyo_election_fixture_manifest_records,
     render_phase0_feasibility_markdown,
     summarize_phase0_fixture_coverage,
     validate_normal_test_fixture_metadata,
@@ -174,6 +177,49 @@ def test_fixture_harness_builds_samples_from_generated_records() -> None:
         warning_count=1,
         review_required_count=0,
     )
+
+
+def test_tokyo_election_fixtures_separate_results_and_bulletin_metadata() -> None:
+    assert len(TOKYO_ELECTION_RESULT_FIXTURES) == 6
+    assert len(TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES) == 4
+    assert {fixture.source_type for fixture in TOKYO_ELECTION_RESULT_FIXTURES} == {
+        "election_result_html",
+        "election_result_pdf",
+    }
+    assert {fixture.source_type for fixture in TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES} == {
+        "public_bulletin_metadata"
+    }
+
+    fixture_records = build_tokyo_election_fixture_manifest_records()
+    assert len(fixture_records) == 10
+    assert len({record.raw_artifact_path for record in fixture_records}) == 10
+    candidate_paths = {
+        record.source_document_candidate.raw_artifact_path for record in fixture_records
+    }
+    assert len(candidate_paths) == 10
+
+    validate_normal_test_fixture_metadata(
+        [
+            *TOKYO_ELECTION_RESULT_FIXTURES,
+            *TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES,
+        ]
+    )
+
+    sample = build_fixture_coverage_sample(
+        source_family="tokyo_elections",
+        raw_artifacts=fixture_records,
+        source_document_candidates=[record.source_document_candidate for record in fixture_records],
+        evidence_items=[object() for _record in fixture_records],
+    )
+    summaries = summarize_phase0_fixture_coverage([sample])
+    assert summaries["tokyo_elections"].meets_target
+
+    for record in fixture_records:
+        assert record.connector is PHASE0_SOURCE_REGISTRY["tokyo_elections"].connector
+        assert record.source_document_candidate.source_family == "tokyo_elections"
+        assert record.source_document_candidate.retrieved_at == record.fetched_at
+        assert record.canonical_url.startswith("https://www.senkyo.metro.tokyo.lg.jp/")
+        assert record.raw_artifact_path.startswith("raw/jp-tokyo/tokyo_elections/2026/07/")
 
 
 def test_fixture_harness_rejects_normal_test_operations_that_touch_external_systems() -> None:

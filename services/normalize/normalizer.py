@@ -1,6 +1,7 @@
 import json
 import re
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from html import unescape
 from uuid import NAMESPACE_URL, uuid5
 
@@ -9,6 +10,7 @@ from ingest.tokyo_assembly_bills import TokyoAssemblyBillDecisionFixture
 from normalize.contracts import (
     AUDIT_REPORT_SOURCE_TYPES,
     AuditFindingCandidate,
+    ElectionCandidateObservation,
     EvidenceClaim,
     EvidenceItem,
     JsonDict,
@@ -16,6 +18,7 @@ from normalize.contracts import (
     SourceDocument,
     build_audit_finding_candidate,
     build_observed_claim,
+    validate_tokyo_election_claims_do_not_merge_entities,
 )
 
 
@@ -96,6 +99,12 @@ def _collapse_whitespace(value: str) -> str:
 
 def _stable_uuid(*parts: object) -> str:
     return str(uuid5(NAMESPACE_URL, "|".join(str(part) for part in parts)))
+
+
+def _datetime_to_json(value: datetime) -> str:
+    if value.tzinfo is None:
+        return value.isoformat()
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _validate_candidate_invariants(record: FetchManifestRecord) -> None:
@@ -183,6 +192,39 @@ def _validate_assembly_bill_decision_input(
 
     if "text/html" not in record.media_type.lower():
         msg = f"unsupported media_type for bill decision normalization: {record.media_type}"
+        raise ValueError(msg)
+
+
+def _validate_tokyo_election_observation_input(
+    record: FetchManifestRecord,
+    observation: ElectionCandidateObservation,
+) -> None:
+    candidate = record.source_document_candidate
+    allowed_source_types = {
+        "election_result_html",
+        "election_result_pdf",
+        "public_bulletin_metadata",
+    }
+    if candidate.source_family != "tokyo_elections":
+        msg = f"unsupported source_family for election normalization: {candidate.source_family}"
+        raise ValueError(msg)
+    if candidate.source_type not in allowed_source_types:
+        msg = f"unsupported source_type for election normalization: {candidate.source_type}"
+        raise ValueError(msg)
+    if observation.source_url != record.canonical_url:
+        msg = "observation source_url must match canonical_url"
+        raise ValueError(msg)
+    if observation.retrieved_at != record.fetched_at:
+        msg = "observation retrieved_at must match fetched_at"
+        raise ValueError(msg)
+    if observation.entity_ref is not None:
+        msg = "tokyo election observations must not carry entity merge refs"
+        raise ValueError(msg)
+    if candidate.source_type == "public_bulletin_metadata" and observation.votes is not None:
+        msg = "public bulletin metadata must not carry votes"
+        raise ValueError(msg)
+    if candidate.source_type != "public_bulletin_metadata" and observation.votes is None:
+        msg = "election result observations must carry votes"
         raise ValueError(msg)
 
 
@@ -499,6 +541,105 @@ def _build_bill_decision_claim(
     )
 
 
+def _election_observation_payload(observation: ElectionCandidateObservation) -> str:
+    return json.dumps(
+        {
+            "election_name": observation.election_name,
+            "district": observation.district,
+            "candidate_name": observation.candidate_name,
+            "votes": observation.votes,
+            "source_url": observation.source_url,
+            "retrieved_at": _datetime_to_json(observation.retrieved_at),
+        },
+        ensure_ascii=False,
+        sort_keys=False,
+    )
+
+
+def _build_election_candidate_evidence_item(
+    *,
+    source_document: SourceDocument,
+    observation: ElectionCandidateObservation,
+) -> EvidenceItem:
+    payload = _election_observation_payload(observation)
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "election_candidate",
+        observation.source_locator,
+        payload,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="api_record",
+        location_value=observation.source_locator,
+        source_span_start=0,
+        source_span_end=len(payload.encode("utf-8")),
+        quote_text=payload,
+        normalized_text=payload,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="fixture_structured_election_record",
+        confidence=1.0,
+        location_metadata={
+            "source_type": source_document.source_type,
+            "source_url": observation.source_url,
+            "retrieved_at": _datetime_to_json(observation.retrieved_at),
+            "election_name": observation.election_name,
+            "district": observation.district,
+            "candidate_name": observation.candidate_name,
+            "votes": observation.votes,
+        },
+    )
+
+
+def _build_election_candidate_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "election_candidate_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="election_candidate_observed",
+        subject_ref=f"{source_document.source_document_id}#candidate:{evidence_item.location_value}",
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
+def _build_election_result_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+    observation: ElectionCandidateObservation,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "election_result_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="election_result_observed",
+        subject_ref=f"{source_document.source_document_id}#result:{evidence_item.location_value}",
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+        amount=None if observation.votes is None else str(observation.votes),
+    )
+
+
 def _build_audit_field_evidence_item(
     *,
     source_document: SourceDocument,
@@ -727,6 +868,46 @@ def normalize_assembly_bill_decision(
         source_document=source_document,
         evidence_items=(evidence_item,),
         evidence_claims=(evidence_claim,),
+    )
+
+
+def normalize_tokyo_election_candidate_observation(
+    record: FetchManifestRecord,
+    observation: ElectionCandidateObservation,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_tokyo_election_observation_input(record, observation)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    evidence_item = _build_election_candidate_evidence_item(
+        source_document=source_document,
+        observation=observation,
+    )
+    evidence_claims = [
+        _build_election_candidate_claim(
+            source_document=source_document,
+            evidence_item=evidence_item,
+        )
+    ]
+    if observation.votes is not None:
+        evidence_claims.append(
+            _build_election_result_claim(
+                source_document=source_document,
+                evidence_item=evidence_item,
+                observation=observation,
+            )
+        )
+    validate_tokyo_election_claims_do_not_merge_entities(evidence_claims)
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=tuple(evidence_claims),
     )
 
 

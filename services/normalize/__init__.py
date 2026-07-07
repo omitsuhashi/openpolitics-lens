@@ -5,6 +5,7 @@ from normalize.contracts import (
     AUDIT_REPORT_SOURCE_TYPES,
     CANDIDATE_CLAIM_TYPE_CATALOG,
     CLAIM_TYPE_CATALOG,
+    ELECTION_ENTITY_MERGE_REF_PREFIXES,
     INTERNAL_ONLY_PUBLIC_VISIBILITY,
     PREDICATE_CATALOG,
     SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE,
@@ -13,6 +14,7 @@ from normalize.contracts import (
     AuditFindingCandidate,
     CandidateClaimCatalogEntry,
     ClaimCatalogEntry,
+    ElectionCandidateObservation,
     EvidenceClaim,
     EvidenceItem,
     NormalizeResult,
@@ -24,6 +26,7 @@ from normalize.contracts import (
     candidate_claim_catalog_entry,
     claim_catalog_entry,
     validate_audit_finding_no_app_classification,
+    validate_tokyo_election_claims_do_not_merge_entities,
 )
 from normalize.normalizer import (
     build_vote_positions_from_bill_decision_fixture,
@@ -31,6 +34,7 @@ from normalize.normalizer import (
     normalize_assembly_records_search_snapshot,
     normalize_audit_report_fixture,
     normalize_grant_program_page,
+    normalize_tokyo_election_candidate_observation,
 )
 
 __all__ = [
@@ -40,6 +44,7 @@ __all__ = [
     "AUDIT_REPORT_SOURCE_TYPES",
     "CANDIDATE_CLAIM_TYPE_CATALOG",
     "CLAIM_TYPE_CATALOG",
+    "ELECTION_ENTITY_MERGE_REF_PREFIXES",
     "INTERNAL_ONLY_PUBLIC_VISIBILITY",
     "PREDICATE_CATALOG",
     "SPENDING_REVIEW_SIGNAL_CANDIDATE_CLAIM_TYPE",
@@ -48,6 +53,7 @@ __all__ = [
     "AuditFindingCandidate",
     "CandidateClaimCatalogEntry",
     "ClaimCatalogEntry",
+    "ElectionCandidateObservation",
     "EvidenceClaim",
     "EvidenceItem",
     "NormalizeResult",
@@ -63,5 +69,7 @@ __all__ = [
     "normalize_assembly_records_search_snapshot",
     "normalize_audit_report_fixture",
     "normalize_grant_program_page",
+    "normalize_tokyo_election_candidate_observation",
     "validate_audit_finding_no_app_classification",
+    "validate_tokyo_election_claims_do_not_merge_entities",
 ]

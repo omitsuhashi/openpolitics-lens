@@ -3,7 +3,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 
-from ingest.contracts import ConnectorDefinition, JsonDict, JurisdictionProfile, SourceFamily
+from ingest.contracts import (
+    ConnectorDefinition,
+    FetchManifestRecord,
+    JsonDict,
+    JurisdictionProfile,
+    SourceDocumentCandidate,
+    SourceFamily,
+)
 from ingest.tokyo_audit_reports import TOKYO_AUDIT_REPORTS_CONNECTOR
 from ingest.tokyo_metro_grants import TOKYO_METRO_GRANTS_CONNECTOR
 
@@ -451,6 +458,120 @@ PHASE0_FIXTURE_CATALOG: dict[str, FixtureMetadata] = {
     )
     for source_family, entry in PHASE0_SOURCE_REGISTRY.items()
 }
+
+
+def _tokyo_election_fixture(
+    *,
+    fixture_id: str,
+    canonical_url: str,
+    media_type: str,
+    source_type: str,
+) -> FixtureMetadata:
+    return FixtureMetadata(
+        fixture_id=fixture_id,
+        source_family="tokyo_elections",
+        canonical_url=canonical_url,
+        fetched_at=_FIXTURE_FETCHED_AT,
+        media_type=media_type,
+        byte_size=len(canonical_url.encode("utf-8")),
+        content_hash=_fixture_hash(fixture_id),
+        source_type=source_type,
+        expected_evidence_item_count=1,
+    )
+
+
+TOKYO_ELECTION_RESULT_FIXTURES: tuple[FixtureMetadata, ...] = (
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-html-001",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-001.html",
+        media_type="text/html; charset=utf-8",
+        source_type="election_result_html",
+    ),
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-html-002",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-002.html",
+        media_type="text/html; charset=utf-8",
+        source_type="election_result_html",
+    ),
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-html-003",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-003.html",
+        media_type="text/html; charset=utf-8",
+        source_type="election_result_html",
+    ),
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-pdf-004",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-004.pdf",
+        media_type="application/pdf",
+        source_type="election_result_pdf",
+    ),
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-pdf-005",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-005.pdf",
+        media_type="application/pdf",
+        source_type="election_result_pdf",
+    ),
+    _tokyo_election_fixture(
+        fixture_id="tokyo-elections-result-pdf-006",
+        canonical_url="https://www.senkyo.metro.tokyo.lg.jp/election/result/sample-006.pdf",
+        media_type="application/pdf",
+        source_type="election_result_pdf",
+    ),
+)
+TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES: tuple[FixtureMetadata, ...] = tuple(
+    _tokyo_election_fixture(
+        fixture_id=f"tokyo-elections-bulletin-metadata-{index:03}",
+        canonical_url=(
+            f"https://www.senkyo.metro.tokyo.lg.jp/election/bulletin/sample-{index:03}.json"
+        ),
+        media_type="application/json",
+        source_type="public_bulletin_metadata",
+    )
+    for index in range(7, 11)
+)
+
+
+def _extension_from_media_type(media_type: str) -> str:
+    if "pdf" in media_type:
+        return "pdf"
+    if "json" in media_type:
+        return "json"
+    return "html"
+
+
+def build_tokyo_election_fixture_manifest_records() -> tuple[FetchManifestRecord, ...]:
+    connector = PHASE0_SOURCE_REGISTRY["tokyo_elections"].connector
+    fixtures = (*TOKYO_ELECTION_RESULT_FIXTURES, *TOKYO_ELECTION_BULLETIN_METADATA_FIXTURES)
+
+    return tuple(
+        FetchManifestRecord(
+            connector=connector,
+            canonical_url=fixture.canonical_url,
+            fetched_at=fixture.fetched_at,
+            http_status=200,
+            content_hash=fixture.content_hash,
+            media_type=fixture.media_type,
+            byte_size=fixture.byte_size,
+            raw_artifact_path=(
+                "raw/jp-tokyo/tokyo_elections/2026/07/"
+                f"{fixture.content_hash}.{_extension_from_media_type(fixture.media_type)}"
+            ),
+            source_document_candidate=SourceDocumentCandidate(
+                canonical_url=fixture.canonical_url,
+                title=fixture.fixture_id,
+                source_type=fixture.source_type,
+                jurisdiction_id=connector.jurisdiction.jurisdiction_id,
+                source_family=connector.source_family.source_family,
+                language="ja",
+                retrieved_at=fixture.fetched_at,
+                raw_artifact_path=(
+                    "raw/jp-tokyo/tokyo_elections/2026/07/"
+                    f"{fixture.content_hash}.{_extension_from_media_type(fixture.media_type)}"
+                ),
+            ),
+        )
+        for fixture in fixtures
+    )
 
 
 def validate_normal_test_fixture_metadata(fixtures: Iterable[FixtureMetadata]) -> None:
