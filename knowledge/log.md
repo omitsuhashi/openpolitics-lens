@@ -385,3 +385,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-012-input-packet.json`、`phase0-remainder-p0r-012-execution-envelope.json`、`phase0-remainder-p0r-012-execution-handoff.md` を追加。
 - `P0R-011` head `e793c9e7f3290c742608d1f77bc144b609d4b65c` を blocker head base とし、`P0R-012` branch をそこから作る方針にした。
 - 実行対象は `python -m ingest phase0 fixture-report` と `phase0-source-probe-feasibility-report.md` に限定し、live source 取得、source probe 大規模再実装、public UI、production object storage は非対象に残した。
+
+## [2026-07-07] implementation-result | P0R-012 phase0 coverage report PR_READY
+
+- `P0R-012` は branch `codex/opl-phase0-remainder-20260707/P0R-012-phase0-coverage-report`、head `d556b0ae5c1d5245e4ccf2b84018f8dabf118583` で local `PR_READY`。
+- cycle 1 review で `P0R-004` から `P0R-009` の approved heads 未統合を検出し、統合後の cycle 2 review で Critical / Important / Minor なしとして承認した。
+- `phase0 fixture-report` は `phase0_status=complete`、Roadmap 対象 source family 7/7、助成・補助金と監査 source の必須 gate 達成を記録した。[Phase 0 source probe feasibility report](wiki/syntheses/phase0-source-probe-feasibility-report.md) を追加し、`index.md` から辿れるようにした。
+- verification は `uv run python -m ingest phase0 fixture-report --fixtures tests/fixtures --output-dir ingest/out` complete、`uv run pytest -q` 94 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。`git merge-base --is-ancestor` は `P0R-004` から `P0R-009` の approved heads すべてで passed。
+- fixture-only のため、live source availability、live HTML / PDF layout drift、OCR quality、browser automation behavior、production data quality、public UI readiness は未検証。

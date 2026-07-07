@@ -3,7 +3,7 @@ kind: synthesis
 created: 2026-07-07
 updated: 2026-07-07
 epic_id: OPL-PHASE0-REMAINDER-20260707
-status: implementation-active
+status: implementation-complete
 spec: phase0-remainder-implementation-design.md
 spec_gate_commit: 90a2e00
 ---
@@ -14,7 +14,7 @@ spec_gate_commit: 90a2e00
 
 `OPL-PHASE0-REMAINDER-20260707` では、Roadmap の Phase 0 gate を満たすため、まず RawArtifact / Evidence / source registry の共通 contract を固め、その後 Roadmap 対象 source 7 系統の fixture-first probe を実装する。
 
-`P0R-001` から `P0R-011` は実装レビュー承認済みで local `PR_READY` になった。`P0R-012` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
+`P0R-001` から `P0R-012` は実装レビュー承認済みで local `PR_READY` になった。`P0R-012` の `phase0 fixture-report` は `phase0_status=complete`、Roadmap 対象 source family 7/7 達成、助成・補助金と監査 source の必須 gate 達成を記録した。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
 
 ## Ledger
 
@@ -31,7 +31,7 @@ spec_gate_commit: 90a2e00
 | OPL-PHASE0-REMAINDER-20260707 | P0R-009 | 助成・補助金 `SubsidyProgramCandidate` probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-010 | 監査 source / `AuditFindingCandidate` probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-011, P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-011 | 監査指摘とアプリ計算 signal の保存分離 contract を作る | 承認済み | PR_READY | P0R-010 | P0R-012 | 未作成 | 承認済み | 未作成 |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-012 | Phase 0 feasibility report / coverage CLI を作る | 承認済み | 実行可能 | P0R-004, P0R-005, P0R-006, P0R-007, P0R-008, P0R-009, P0R-010, P0R-011 | なし | 未作成 | 未実施 | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-012 | Phase 0 feasibility report / coverage CLI を作る | 承認済み | PR_READY | P0R-004, P0R-005, P0R-006, P0R-007, P0R-008, P0R-009, P0R-010, P0R-011 | なし | 未作成 | 承認済み | 未作成 |
 
 ## Blocker graph
 
@@ -48,7 +48,7 @@ P0R-003 -> P0R-010 -> P0R-011 -> P0R-012
 P0R-010 -> P0R-012
 ```
 
-cycle はない。`P0R-001` から `P0R-011` は local `PR_READY` になったため、`P0R-012` が実行可能である。
+cycle はない。`P0R-001` から `P0R-012` は local `PR_READY` になった。
 
 ## P0R-001: RawArtifact storage gate を確定する
 
@@ -454,6 +454,17 @@ uv run ruff check .
 uv run ruff format --check .
 git diff --check
 ```
+
+### 実装結果
+
+- branch: `codex/opl-phase0-remainder-20260707/P0R-012-phase0-coverage-report`
+- base: `e793c9e7f3290c742608d1f77bc144b609d4b65c`
+- head: `d556b0ae5c1d5245e4ccf2b84018f8dabf118583`
+- review range: `e793c9e7f3290c742608d1f77bc144b609d4b65c..d556b0ae5c1d5245e4ccf2b84018f8dabf118583`
+- 実装レビュー: cycle 1 では `P0R-004` から `P0R-009` の approved heads が統合されていないため changes requested。cycle 2 で統合済み head を確認し、Critical / Important / Minor なしで承認済み。
+- 実装内容: `P0R-004` から `P0R-009` の approved source probe heads を統合し、`python -m ingest phase0 fixture-report` と [Phase 0 source probe feasibility report](phase0-source-probe-feasibility-report.md) を Phase 0 completion gate として固定した。report は Roadmap 対象 source family 7/7、助成・補助金と監査 source の必須 gate 達成、通常検証で external network / browser automation / PDF download / OCR を使わないことを記録する。
+- verification: `uv run python -m ingest phase0 fixture-report --fixtures tests/fixtures --output-dir ingest/out` は `phase0_status=complete`、`uv run pytest -q` は 94 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。`git merge-base --is-ancestor` は `P0R-004` から `P0R-009` の approved heads すべてで passed。
+- 残リスク: fixture-only のため、live source availability、live HTML / PDF layout drift、OCR quality、browser automation behavior、production data quality、public UI readiness は未検証。`storage-smoke` には local MinIO 用 `urlopen` 経路が残るが、`phase0 fixture-report` と通常 fixture tests からは呼ばれない。
 
 ## リモート方針
 
