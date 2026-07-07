@@ -16,9 +16,9 @@
 ローカル開発用 datastore は Docker Compose で起動する。
 
 ```bash
-cp .env.example .env
-docker compose up -d
-docker compose ps
+cp .env.example .env.local
+docker compose --env-file .env.local up -d
+docker compose --env-file .env.local ps
 ```
 
 主要 endpoint:
@@ -33,5 +33,5 @@ docker compose ps
 停止:
 
 ```bash
-docker compose down
+docker compose --env-file .env.local down
 ```

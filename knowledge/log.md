@@ -182,3 +182,33 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - code review 指摘に従い、ingest input packet と follow-up input packet の `approved_hash` を現行 `tokyo-subsidy-ingest-spec.md` の hash に更新。
 - `G2PR-003` の input packet acceptance criteria を `tokyo-metro-grants fixture` / `run` 分離と `--live` 廃止後の CLI 方針へ揃えた。
+
+## [2026-07-07] design | Phase 0 remainder implementation draft
+
+- `wiki/syntheses/phase0-remainder-implementation-design.md` を追加し、`OPL-PHASE0-REMAINDER-20260707` の Spec Gate draft を作成。
+- Phase 0 残実装を common contract first、fixture-only verification、source family 横断 sample coverage、parse warning / locator contract、candidate-first の `SubsidyProgram` / `AuditFinding` として設計した。
+- `SpendingReviewSignal`、public UI、score、GraphDB projection、live acquisition、GitHub mirror / PR は非目標として残した。
+- `index.md` に discovery entry を追加した。
+
+## [2026-07-07] review-fix | Align Phase 0 draft with roadmap storage gate
+
+- `roadmap.md` の Phase 0 gate に照らし、RawArtifact の S3 互換 object storage 保存、RDB `raw_artifacts` payload、source URL、取得日時、content hash を `phase0-remainder-implementation-design.md` の受け入れ条件へ追加した。
+- local MinIO bucket `openpolitics-raw` の smoke verification を通常 test から分ける方針を追記した。
+- `local-infrastructure.md` と `architecture.md` の object key 表記を、実装済み migration / object writer と同じ `raw/{jurisdiction_id}/{source_family}/{yyyy}/{mm}/{sha256}.{ext}` へ揃えた。
+
+## [2026-07-07] design | Re-scope Phase 0 remainder against roadmap
+
+- `phase0-remainder-implementation-design.md` に Roadmap 対照表を追加し、Phase 0 の成果、対象 source、Gate を現状・不足・実装設計・対応 issue に分解した。
+- Roadmap 対象 source 7 系統をすべて Phase 0 probe 対象として扱い、`P0R-001` から `P0R-012` へ issue 分解を組み替えた。
+- `SpendingReviewSignal` を完全非対象にせず、public 表示と score は非目標のまま、`AuditFindingCandidate` と app-calculated signal candidate の保存分離 contract を Phase 0 scope に戻した。
+
+## [2026-07-07] design | Fix local MinIO runtime contract
+
+- `.env.local` を local runtime file とし、Compose command は `--env-file .env.local` を明示する方針に更新。
+- Phase 0 RawArtifact smoke の MinIO 起動入口を `docker compose --env-file .env.local up -d minio minio-init` に固定。
+
+## [2026-07-07] gate | Approve Phase 0 remainder spec
+
+- `OPL-PHASE0-REMAINDER-20260707` の Spec Gate を承認済みに更新。
+- 承認範囲は common contract first、fixture-only verification、source family 横断 sample coverage、S3 互換 RawArtifact storage gate、`.env.local` + local MinIO smoke、candidate-first の `SubsidyProgram` / `AuditFinding`、監査指摘と app-calculated signal candidate の保存分離。
+- リモート方針は `local_only` のまま維持し、GitHub mirror / PR / live acquisition は別 gate に残す。
