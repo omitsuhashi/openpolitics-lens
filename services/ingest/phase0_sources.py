@@ -11,6 +11,7 @@ NORMAL_TEST_FORBIDDEN_OPERATIONS: frozenset[str] = frozenset(
     {
         "external_network",
         "browser_automation",
+        "live_search",
         "pdf_download",
         "ocr_execution",
     }

@@ -181,6 +181,7 @@ def test_fixture_harness_rejects_normal_test_operations_that_touch_external_syst
         {
             "external_network",
             "browser_automation",
+            "live_search",
             "pdf_download",
             "ocr_execution",
         }

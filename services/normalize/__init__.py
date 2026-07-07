@@ -25,7 +25,11 @@ from normalize.contracts import (
     claim_catalog_entry,
     validate_audit_finding_no_app_classification,
 )
-from normalize.normalizer import normalize_audit_report_fixture, normalize_grant_program_page
+from normalize.normalizer import (
+    normalize_assembly_records_search_snapshot,
+    normalize_audit_report_fixture,
+    normalize_grant_program_page,
+)
 
 __all__ = [
     "AUDIT_FINDING_CANDIDATE_CLAIM_TYPE",
@@ -52,6 +56,7 @@ __all__ = [
     "candidate_claim_catalog_entry",
     "can_promote_to_evidence_claim",
     "claim_catalog_entry",
+    "normalize_assembly_records_search_snapshot",
     "normalize_audit_report_fixture",
     "normalize_grant_program_page",
     "validate_audit_finding_no_app_classification",
