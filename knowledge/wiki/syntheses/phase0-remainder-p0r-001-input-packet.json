@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/4f07/openpolitics-lens",
+  "epic_id": "opl-phase0-remainder-20260707",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/phase0-remainder-implementation-design.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:ca3d19eaf005fa52ac942b181759aa120b1b96835cc59de5b14bafb4ff9914a9"
+  },
+  "work_items": [
+    {
+      "id": "P0R-001",
+      "title": "RawArtifact storage gate を確定する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": [
+        "fake object storage test が object key raw/{jurisdiction_id}/{source_family}/{yyyy}/{mm}/{sha256}.{ext}、metadata、reserved metadata guard を確認する",
+        "local MinIO smoke が利用可能な環境で 1 artifact の put / metadata / RDB payload 照合を実行できる",
+        "minio-init は one-shot initializer として扱われ、常駐前提にならない",
+        ".env.local は git 管理外のまま維持される",
+        "Docker / MinIO がない環境では通常 test を失敗させない"
+      ],
+      "non_goals": [
+        "P0R-002 以降の Evidence schema、source registry、各 source probe は実装しない",
+        "live source 取得、PDF download、browser automation、OCR 実行は行わない",
+        "production S3、managed object storage、secret / credential 操作は行わない",
+        "GitHub Issue mirror、push、PR 作成は行わない",
+        "public UI、score、GraphDB projection は扱わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check",
+        "docker compose --env-file .env.local up -d minio minio-init && docker compose --env-file .env.local ps minio minio-init && cd services && uv run python -m ingest storage-smoke --bucket openpolitics-raw --endpoint http://localhost:9000"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/tests",
+        "path:services/pyproject.toml",
+        "path:packages/db",
+        "path:README.md",
+        "path:knowledge/local-infrastructure.md",
+        "path:compose.yaml",
+        "path:.env.example",
+        "path:.envrc"
+      ],
+      "dependencies": []
+    }
+  ],
+  "delivery_intent": "local_only"
+}

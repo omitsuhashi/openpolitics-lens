@@ -225,3 +225,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `OPL-PHASE0-REMAINDER-20260707` の Issue Gate を承認済みに更新。
 - `P0R-001` から `P0R-012` の local issue ledger、blocker graph、依存順、実行可能 / ブロック中 status、acceptance criteria を承認済みとした。
 - `P0R-001` だけを初期実行可能 issue とし、GitHub Issue mirror / PR / live acquisition は別 gate に残した。
+
+## [2026-07-07] execution-plan | Approve P0R-001 storage gate packet
+
+- `phase0-remainder-p0r-001-input-packet.json`、`phase0-remainder-p0r-001-execution-envelope.json`、`phase0-remainder-p0r-001-execution-handoff.md` を追加。
+- Execution Envelope は schema version 3 とし、`phase_branch_policy`、worker-only execution、local-only remote policy を明示した。
+- 実行対象は最初の runnable issue である `P0R-001` に限定し、`P0R-002` 以降は blocker graph に残した。
+- execution prereq、input packet validation、execution envelope validation、capability preflight、`git diff --check` は通過。
