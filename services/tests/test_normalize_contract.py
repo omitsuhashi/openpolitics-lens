@@ -1,6 +1,8 @@
 import json
 from dataclasses import replace
 from datetime import UTC, datetime
+from pathlib import Path
+from uuid import UUID
 
 import pytest
 
@@ -40,15 +42,36 @@ def _raw_artifact_id(record: ingest.FetchManifestRecord) -> str:
     return str(rows.raw_artifact["raw_artifact_id"])
 
 
+def _grant_detail_html(
+    *,
+    title: str = "子育て応援助成制度｜東京都",
+    h1: str = "子育て応援助成制度",
+    bureau: str = "東京都子供政策連携室",
+    eligible: str = "都内在住の子育て世帯",
+    application_period: str = "2026年4月1日から2027年3月31日まで",
+    extra_body: str = "",
+) -> bytes:
+    return (
+        "<!doctype html><html><head>"
+        f"<title>{title}</title>"
+        "</head><body>"
+        f"<h1>{h1}</h1>"
+        "<dl>"
+        f"<dt>所管局</dt><dd>{bureau}</dd>"
+        f"<dt>対象者</dt><dd>{eligible}</dd>"
+        f"<dt>申請期間</dt><dd>{application_period}</dd>"
+        "</dl>"
+        f"{extra_body}"
+        "</body></html>"
+    ).encode()
+
+
 def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() -> None:
     record = _fetch_manifest_record()
     raw_artifact_id = _raw_artifact_id(record)
     observed_title = "子育て応援助成制度｜東京都"
-    raw_html = (
-        "<!doctype html><html><head>"
-        f"<title>{observed_title}</title>"
-        "</head><body><h1>本文の制度名</h1></body></html>"
-    ).encode()
+    observed_h1 = "子育て応援助成制度"
+    raw_html = _grant_detail_html(title=observed_title, h1=observed_h1)
 
     result = normalize.normalize_grant_program_page(
         record,
@@ -82,7 +105,7 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
         "language": "ja",
     }
 
-    assert len(result.evidence_items) == 1
+    assert len(result.evidence_items) == 2
     evidence_item = result.evidence_items[0]
     title_start = raw_html.index(observed_title.encode())
     title_end = title_start + len(observed_title.encode())
@@ -103,10 +126,41 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
         "extraction_artifact_path": None,
     }
 
-    assert len(result.evidence_claims) == 1
-    evidence_claim = result.evidence_claims[0]
-    assert evidence_claim.to_json_dict() == {
-        "evidence_claim_id": evidence_claim.evidence_claim_id,
+    candidate_item = result.evidence_items[1]
+    h1_start = raw_html.index(observed_h1.encode(), title_end)
+    h1_end = h1_start + len(observed_h1.encode())
+    assert candidate_item.to_json_dict() == {
+        "evidence_item_id": candidate_item.evidence_item_id,
+        "source_document_id": result.source_document.source_document_id,
+        "location_type": "html_selector",
+        "location_value": "h1",
+        "source_span_start": h1_start,
+        "source_span_end": h1_end,
+        "quote_text": observed_h1,
+        "normalized_text": observed_h1,
+        "raw_artifact_path": record.raw_artifact_path,
+        "extraction_method": "html_stable_subsidy_program_fields",
+        "confidence": 1.0,
+        "location_metadata": {
+            "fields": ["title", "h1", "所管局", "対象者", "申請期間"],
+            "selectors": {
+                "h1": "h1",
+                "所管局": "dt/dd label pair",
+                "対象者": "dt/dd label pair",
+                "申請期間": "dt/dd label pair",
+            },
+        },
+        "parse_warnings": [],
+        "extraction_artifact_path": None,
+    }
+
+    assert [claim.claim_type for claim in result.evidence_claims] == [
+        "grant_program_page_title_observed",
+        "subsidy_program_candidate_observed",
+    ]
+    title_claim = result.evidence_claims[0]
+    assert title_claim.to_json_dict() == {
+        "evidence_claim_id": title_claim.evidence_claim_id,
         "claim_type": "grant_program_page_title_observed",
         "subject_ref": result.source_document.source_document_id,
         "predicate": "observed_page_title",
@@ -118,13 +172,41 @@ def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() ->
         "evidence_item_id": evidence_item.evidence_item_id,
         "review_state": "machine_extracted",
     }
+    candidate_claim = result.evidence_claims[1]
+    candidate_payload = json.loads(candidate_claim.object_value)
+    UUID(candidate_payload["candidate_id"])
+    assert candidate_claim.to_json_dict() == {
+        "evidence_claim_id": candidate_claim.evidence_claim_id,
+        "claim_type": "subsidy_program_candidate_observed",
+        "subject_ref": f"SubsidyProgramCandidate:{candidate_payload['candidate_id']}",
+        "predicate": "observed_subsidy_program_candidate",
+        "object_ref": None,
+        "object_value": candidate_claim.object_value,
+        "event_date": None,
+        "amount": None,
+        "currency": None,
+        "evidence_item_id": candidate_item.evidence_item_id,
+        "review_state": "machine_extracted",
+    }
+    assert candidate_payload == {
+        "candidate_id": candidate_payload["candidate_id"],
+        "canonical_url": record.canonical_url,
+        "title": observed_title,
+        "h1": observed_h1,
+        "bureau": "東京都子供政策連携室",
+        "eligible": "都内在住の子育て世帯",
+        "application_period": "2026年4月1日から2027年3月31日まで",
+        "source_document_id": result.source_document.source_document_id,
+        "evidence_item_id": candidate_item.evidence_item_id,
+        "review_state": "candidate",
+    }
 
 
 def test_normalize_keeps_quote_text_as_decoded_source_span_and_normalizes_title() -> None:
     record = _fetch_manifest_record()
     raw_title = "子育て&nbsp;\n応援助成制度"
     normalized_title = "子育て 応援助成制度"
-    raw_html = f"<html><head><title>{raw_title}</title></head></html>".encode()
+    raw_html = _grant_detail_html(title=raw_title, h1="子育て応援助成制度")
 
     result = normalize.normalize_grant_program_page(
         record,
@@ -333,15 +415,16 @@ def test_low_confidence_or_missing_locator_evidence_does_not_promote_to_claim(
 def test_normalize_does_not_infer_non_goal_claims_from_body_text() -> None:
     record = _fetch_manifest_record()
     observed_title = "子育て応援助成制度｜東京都"
-    raw_html = (
-        "<html><head>"
-        f"<title>{observed_title}</title>"
-        "</head><body>"
-        "<p>交付先: 株式会社サンプル</p>"
-        "<p>100万円を助成します。</p>"
-        "<p>監査指摘: 支出確認が必要です。</p>"
-        "</body></html>"
-    ).encode()
+    raw_html = _grant_detail_html(
+        title=observed_title,
+        extra_body=(
+            "<p>交付先: 株式会社サンプル</p>"
+            "<p>100万円を助成します。</p>"
+            "<p>監査指摘: 支出確認が必要です。</p>"
+            "<p>成果: 利用者満足度が向上しました。</p>"
+            "<p>PublicMoneyFlow</p>"
+        ),
+    )
 
     result = normalize.normalize_grant_program_page(
         record,
@@ -349,15 +432,72 @@ def test_normalize_does_not_infer_non_goal_claims_from_body_text() -> None:
         raw_artifact_id=_raw_artifact_id(record),
     )
 
-    assert len(result.evidence_items) == 1
-    assert len(result.evidence_claims) == 1
-    claim = result.evidence_claims[0]
-    assert claim.claim_type == "grant_program_page_title_observed"
-    assert claim.object_value == observed_title
-    assert claim.amount is None
-    assert claim.currency is None
-    assert claim.event_date is None
-    assert claim.object_ref is None
+    assert [claim.claim_type for claim in result.evidence_claims] == [
+        "grant_program_page_title_observed",
+        "subsidy_program_candidate_observed",
+    ]
+    for claim in result.evidence_claims:
+        assert claim.amount is None
+        assert claim.currency is None
+        assert claim.event_date is None
+        assert claim.object_ref is None
+        assert "株式会社サンプル" not in claim.object_value
+        assert "100万円" not in claim.object_value
+        assert "監査指摘" not in claim.object_value
+        assert "成果" not in claim.object_value
+        assert "PublicMoneyFlow" not in claim.object_value
+
+
+def test_normalize_builds_subsidy_program_candidates_for_fixture_batch(
+    tmp_path: Path,
+) -> None:
+    connector = ingest.TokyoMetroGrantsConnector()
+    candidates = connector.discover_from_html(
+        (Path(__file__).parent / "fixtures" / "tokyo_metro_grants_index.html").read_text(
+            encoding="utf-8"
+        ),
+        discovered_at=datetime(2026, 7, 5, 9, 0, tzinfo=UTC),
+    )
+    fetcher = ingest.FakeTokyoMetroGrantsFetcher(
+        {
+            candidate.canonical_url: _grant_detail_html(
+                title=f"{candidate.title}｜東京都",
+                h1=candidate.title,
+            )
+            for candidate in candidates
+        }
+    )
+    writer = ingest.FileSystemOutputWriter(tmp_path)
+
+    fetched_records = connector.fetch_candidates(
+        candidates,
+        fetcher=fetcher,
+        output_writer=writer,
+        run_id="run-20260705",
+        fetched_at=datetime(2026, 7, 5, 9, 1, tzinfo=UTC),
+    )
+    results = [
+        normalize.normalize_grant_program_page(
+            record,
+            (tmp_path / record.raw_artifact_path).read_bytes(),
+            raw_artifact_id=_raw_artifact_id(record),
+        )
+        for record in fetched_records
+    ]
+
+    candidate_claims = [
+        claim
+        for result in results
+        for claim in result.evidence_claims
+        if claim.claim_type == "subsidy_program_candidate_observed"
+    ]
+    candidate_evidence_ids = {claim.evidence_item_id for claim in candidate_claims}
+    all_evidence_ids = {
+        item.evidence_item_id for result in results for item in result.evidence_items
+    }
+    assert len(fetched_records) >= 10
+    assert len(candidate_claims) >= 10
+    assert candidate_evidence_ids <= all_evidence_ids
 
 
 @pytest.mark.parametrize(

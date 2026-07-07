@@ -45,13 +45,20 @@ def test_tokyo_metro_grants_discovers_deterministic_fixture_candidates(
 
     payloads = [record.to_json_dict() for record in records]
     assert [payload["canonical_url"] for payload in payloads] == [
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-staff-training.html",
         "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-subsidy.html",
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/temporary-care.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/after-school.html",
         "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/support.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/young-family-rent.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/wakamono/activity-grant.html",
         "https://www.metro.tokyo.lg.jp/education/support/private-school-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/school-lunch-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/special-needs-school-grant.html",
     ]
-    assert payloads[0]["matched_keywords"] == ["保育", "補助"]
-    assert payloads[1]["matched_keywords"] == ["子育て", "補助"]
-    assert payloads[2]["matched_keywords"] == ["学校", "助成"]
+    assert payloads[0]["matched_keywords"] == ["保育", "助成"]
+    assert payloads[4]["matched_keywords"] == ["子育て", "補助"]
+    assert payloads[7]["matched_keywords"] == ["学校", "助成"]
 
     for payload in payloads:
         assert payload["jurisdiction_id"] == "jp-tokyo"
@@ -77,9 +84,19 @@ def test_tokyo_metro_grants_fake_fetch_writes_raw_artifacts_and_fetch_manifest(
     )
     fetcher = FakeTokyoMetroGrantsFetcher(
         {
-            candidates[0].canonical_url: b"<html><body>nursery subsidy</body></html>",
-            candidates[1].canonical_url: b"<html><body>child support subsidy</body></html>",
-            candidates[2].canonical_url: b"<html><body>private school subsidy</body></html>",
+            candidate.canonical_url: (
+                "<html><head>"
+                f"<title>{candidate.title}｜東京都</title>"
+                "</head><body>"
+                f"<h1>{candidate.title}</h1>"
+                "<dl>"
+                "<dt>所管局</dt><dd>東京都政策局</dd>"
+                "<dt>対象者</dt><dd>都内の子供・子育て世帯</dd>"
+                "<dt>申請期間</dt><dd>2026年4月1日から2027年3月31日まで</dd>"
+                "</dl>"
+                "</body></html>"
+            ).encode()
+            for candidate in candidates
         }
     )
     writer = FileSystemOutputWriter(tmp_path)
@@ -93,7 +110,8 @@ def test_tokyo_metro_grants_fake_fetch_writes_raw_artifacts_and_fetch_manifest(
     )
 
     payloads = [record.to_json_dict() for record in records]
-    assert len(payloads) == 3
+    assert len(payloads) == 10
+    assert len({payload["raw_artifact_path"] for payload in payloads}) == 10
     assert [payload["canonical_url"] for payload in payloads] == [
         candidate.canonical_url for candidate in candidates
     ]

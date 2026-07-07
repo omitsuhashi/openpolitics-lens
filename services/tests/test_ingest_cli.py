@@ -41,9 +41,16 @@ def test_tokyo_metro_grants_fixture_cli_writes_manifests_and_raw_artifact(
     fetched = [json.loads(line) for line in fetched_path.read_text().splitlines()]
 
     assert [record["canonical_url"] for record in discovered] == [
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-staff-training.html",
         "https://www.fukushi.metro.tokyo.lg.jp/childcare/nursery-subsidy.html",
+        "https://www.fukushi.metro.tokyo.lg.jp/childcare/temporary-care.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/after-school.html",
         "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/support.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/kosodate/young-family-rent.html",
+        "https://www.kodomoseisaku.metro.tokyo.lg.jp/wakamono/activity-grant.html",
         "https://www.metro.tokyo.lg.jp/education/support/private-school-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/school-lunch-subsidy.html",
+        "https://www.metro.tokyo.lg.jp/education/support/special-needs-school-grant.html",
     ]
     assert [record["canonical_url"] for record in fetched] == [
         record["canonical_url"] for record in discovered
