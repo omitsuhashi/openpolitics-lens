@@ -16,12 +16,20 @@ from ingest.phase0_sources import (
     PHASE0_FIXTURE_REPORT_JSON_FILENAME,
     FixtureCoverageSample,
     build_fixture_coverage_sample,
+    build_p0r008_procurement_budget_fixture,
     build_phase0_fixture_report,
+    build_tokyo_election_fixture_manifest_records,
     render_phase0_feasibility_markdown,
     summarize_phase0_fixture_coverage,
     validate_normal_test_fixture_metadata,
 )
+from ingest.political_funds import build_tokyo_political_funds_fixture_probe
 from ingest.storage_smoke import StorageSmokeError, run_storage_smoke
+from ingest.tokyo_assembly_bills import (
+    TOKYO_ASSEMBLY_BILL_DECISION_FIXTURES,
+    build_tokyo_assembly_bill_decision_fixture_records,
+)
+from ingest.tokyo_assembly_records import build_tokyo_assembly_records_fixture_probe
 from ingest.tokyo_audit_reports import (
     FakeTokyoAuditReportsFetcher,
     TokyoAuditReportsConnector,
@@ -328,6 +336,13 @@ def _build_phase0_fixture_samples(
 ) -> tuple[FixtureCoverageSample, ...]:
     artifact_root = output_dir / "phase0-fixture-artifacts"
     return (
+        _build_tokyo_assembly_records_fixture_sample(),
+        _build_tokyo_assembly_bills_fixture_sample(
+            artifact_root=artifact_root / "tokyo_assembly_records_bills",
+        ),
+        _build_tokyo_elections_fixture_sample(),
+        _build_tokyo_political_funds_fixture_sample(),
+        *_build_p0r008_procurement_budget_fixture_samples(),
         _build_tokyo_metro_grants_fixture_sample(
             fixtures_dir=fixtures_dir,
             artifact_root=artifact_root / "tokyo_metro_grants",
@@ -335,6 +350,150 @@ def _build_phase0_fixture_samples(
         _build_tokyo_audit_reports_fixture_sample(
             fixtures_dir=fixtures_dir,
             artifact_root=artifact_root / "tokyo_audit_reports",
+        ),
+    )
+
+
+def _build_tokyo_assembly_records_fixture_sample() -> FixtureCoverageSample:
+    probe = build_tokyo_assembly_records_fixture_probe()
+    evidence_items = []
+    for artifact, record in zip(probe.raw_artifacts, probe.fetch_manifests, strict=True):
+        raw_artifact_id = str(
+            build_fetch_manifest_db_rows(
+                record,
+                object_bucket="fixture-report",
+            ).raw_artifact["raw_artifact_id"]
+        )
+        result = normalize.normalize_assembly_records_search_snapshot(
+            record,
+            artifact.content,
+            raw_artifact_id=raw_artifact_id,
+        )
+        evidence_items.extend(result.evidence_items)
+
+    return build_fixture_coverage_sample(
+        source_family="tokyo_assembly_records_bills",
+        raw_artifacts=probe.raw_artifacts,
+        source_document_candidates=probe.source_document_candidates,
+        evidence_items=evidence_items,
+    )
+
+
+def _build_tokyo_assembly_bills_fixture_sample(
+    *,
+    artifact_root: Path,
+) -> FixtureCoverageSample:
+    writer = FileSystemOutputWriter(artifact_root)
+    fetched_at = datetime(2026, 7, 7, 0, 2, tzinfo=UTC)
+    records = build_tokyo_assembly_bill_decision_fixture_records(
+        output_writer=writer,
+        run_id="phase0-tokyo-assembly-bills",
+        fetched_at=fetched_at,
+    )
+    evidence_items = []
+    for record, fixture in zip(records, TOKYO_ASSEMBLY_BILL_DECISION_FIXTURES, strict=True):
+        raw_artifact_id = str(
+            build_fetch_manifest_db_rows(
+                record,
+                object_bucket="fixture-report",
+            ).raw_artifact["raw_artifact_id"]
+        )
+        result = normalize.normalize_assembly_bill_decision(
+            record,
+            (artifact_root / record.raw_artifact_path).read_bytes(),
+            fixture,
+            raw_artifact_id=raw_artifact_id,
+        )
+        evidence_items.extend(result.evidence_items)
+
+    return build_fixture_coverage_sample(
+        source_family="tokyo_assembly_records_bills",
+        raw_artifacts=records,
+        source_document_candidates=[record.source_document_candidate for record in records],
+        evidence_items=evidence_items,
+    )
+
+
+def _build_tokyo_elections_fixture_sample() -> FixtureCoverageSample:
+    records = build_tokyo_election_fixture_manifest_records()
+    observations = [
+        normalize.ElectionCandidateObservation(
+            election_name=f"東京都議会議員選挙 2025 sample {index}",
+            district=f"第{index}選挙区",
+            candidate_name=f"候補者{index}",
+            votes=(
+                10_000 + index
+                if record.source_document_candidate.source_type != "public_bulletin_metadata"
+                else None
+            ),
+            source_url=record.canonical_url,
+            retrieved_at=record.fetched_at,
+            source_locator=f"fixture-row-{index}",
+        )
+        for index, record in enumerate(records, start=1)
+    ]
+    evidence_items = []
+    for record, observation in zip(records, observations, strict=True):
+        raw_artifact_id = str(
+            build_fetch_manifest_db_rows(
+                record,
+                object_bucket="fixture-report",
+            ).raw_artifact["raw_artifact_id"]
+        )
+        result = normalize.normalize_tokyo_election_candidate_observation(
+            record,
+            observation,
+            raw_artifact_id=raw_artifact_id,
+        )
+        evidence_items.extend(result.evidence_items)
+
+    return build_fixture_coverage_sample(
+        source_family="tokyo_elections",
+        raw_artifacts=records,
+        source_document_candidates=[record.source_document_candidate for record in records],
+        evidence_items=evidence_items,
+    )
+
+
+def _build_tokyo_political_funds_fixture_sample() -> FixtureCoverageSample:
+    probe = build_tokyo_political_funds_fixture_probe()
+    return build_fixture_coverage_sample(
+        source_family="tokyo_political_funds",
+        raw_artifacts=probe.raw_artifacts,
+        source_document_candidates=probe.source_document_candidates,
+        evidence_items=probe.evidence_items,
+    )
+
+
+def _build_p0r008_procurement_budget_fixture_samples() -> tuple[FixtureCoverageSample, ...]:
+    fixture = build_p0r008_procurement_budget_fixture()
+    results = normalize.normalize_p0r008_procurement_budget_fixture(fixture.records)
+    evidence_items_by_family = {
+        source_family: [
+            item
+            for result in results
+            if result.source_document.source_family == source_family
+            for item in result.evidence_items
+        ]
+        for source_family in ("tokyo_budget_settlement", "tokyo_procurement")
+    }
+
+    return (
+        build_fixture_coverage_sample(
+            source_family="tokyo_budget_settlement",
+            raw_artifacts=fixture.budget_records,
+            source_document_candidates=[
+                record.source_document_candidate for record in fixture.budget_records
+            ],
+            evidence_items=evidence_items_by_family["tokyo_budget_settlement"],
+        ),
+        build_fixture_coverage_sample(
+            source_family="tokyo_procurement",
+            raw_artifacts=fixture.procurement_records,
+            source_document_candidates=[
+                record.source_document_candidate for record in fixture.procurement_records
+            ],
+            evidence_items=evidence_items_by_family["tokyo_procurement"],
         ),
     )
 
@@ -362,17 +521,51 @@ def _build_tokyo_metro_grants_fixture_sample(
     fetched = connector.fetch_candidates(
         discovered,
         fetcher=FakeTokyoMetroGrantsFetcher(
-            {record.canonical_url: fixture_bytes for record in discovered}
+            {
+                record.canonical_url: _build_tokyo_metro_grant_detail_fixture_html(record.title)
+                for record in discovered
+            }
         ),
         output_writer=writer,
         run_id=run_id,
         fetched_at=fetched_at,
     )
+    evidence_items = []
+    for record in fetched:
+        raw_artifact_id = str(
+            build_fetch_manifest_db_rows(
+                record,
+                object_bucket="fixture-report",
+            ).raw_artifact["raw_artifact_id"]
+        )
+        result = normalize.normalize_grant_program_page(
+            record,
+            (artifact_root / record.raw_artifact_path).read_bytes(),
+            raw_artifact_id=raw_artifact_id,
+        )
+        evidence_items.extend(result.evidence_items)
+
     return build_fixture_coverage_sample(
         source_family="tokyo_metro_grants",
         raw_artifacts=fetched,
         source_document_candidates=[record.source_document_candidate for record in fetched],
+        evidence_items=evidence_items,
     )
+
+
+def _build_tokyo_metro_grant_detail_fixture_html(title: str) -> bytes:
+    return (
+        "<!doctype html><html><head>"
+        f"<title>{title}｜東京都</title>"
+        "</head><body>"
+        f"<h1>{title}</h1>"
+        "<dl>"
+        "<dt>所管局</dt><dd>東京都政策局</dd>"
+        "<dt>対象者</dt><dd>都内の子供・子育て世帯</dd>"
+        "<dt>申請期間</dt><dd>2026年4月1日から2027年3月31日まで</dd>"
+        "</dl>"
+        "</body></html>"
+    ).encode()
 
 
 def _build_tokyo_audit_reports_fixture_sample(

@@ -3,18 +3,18 @@ kind: synthesis
 created: 2026-07-07
 updated: 2026-07-07
 epic_id: OPL-PHASE0-REMAINDER-20260707
-status: phase0-incomplete
+status: phase0-complete
 ---
 
 # Phase 0 source probe feasibility report
 
 ## 結論
 
-Phase 0 判定: `incomplete`
+Phase 0 判定: `complete`
 
-- 達成 source family: 1/7
+- 達成 source family: 7/7
 - 最低 gate: 5 source family 以上で RawArtifact / SourceDocumentCandidate / EvidenceItem が各 10 件以上
-- 必須 source family: tokyo_audit_reports, tokyo_metro_grants は未達を含む
+- 必須 source family: tokyo_audit_reports, tokyo_metro_grants は達成済み
 - 通常検証では external network / browser automation / PDF download / OCR を実行しない
 
 ## Roadmap 対象 source
@@ -31,12 +31,12 @@ Phase 0 判定: `incomplete`
 
 | source_family | status | RawArtifact | SourceDocumentCandidate | EvidenceItem | warnings | review_required | blocked_reason |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| tokyo_assembly_records_bills | blocked | 0 | 0 | 0 | 0 | 0 | fixture probe not implemented for assembly records and bill decisions; target not met: RawArtifact 0/10, SourceDocumentCandidate 0/10, EvidenceItem 0/10 |
-| tokyo_elections | blocked | 0 | 0 | 0 | 0 | 0 | fixture probe not implemented for election result and bulletin sources; target not met: RawArtifact 0/10, SourceDocumentCandidate 0/10, EvidenceItem 0/10 |
-| tokyo_political_funds | blocked | 0 | 0 | 0 | 0 | 0 | fixture probe not implemented for political funds reports; target not met: RawArtifact 0/10, SourceDocumentCandidate 0/10, EvidenceItem 0/10 |
-| tokyo_budget_settlement | blocked | 0 | 0 | 0 | 0 | 0 | fixture probe not implemented for budget and settlement sources; target not met: RawArtifact 0/10, SourceDocumentCandidate 0/10, EvidenceItem 0/10 |
-| tokyo_procurement | blocked | 0 | 0 | 0 | 0 | 0 | fixture probe not implemented for procurement search snapshots; target not met: RawArtifact 0/10, SourceDocumentCandidate 0/10, EvidenceItem 0/10 |
-| tokyo_metro_grants | blocked | 3 | 3 | 0 | 0 | 0 | target not met: RawArtifact 3/10, SourceDocumentCandidate 3/10, EvidenceItem 0/10; SubsidyProgramCandidate 10 sample baseline is not yet present |
+| tokyo_assembly_records_bills | complete | 20 | 20 | 20 | 20 | 0 |  |
+| tokyo_elections | complete | 10 | 10 | 10 | 0 | 0 |  |
+| tokyo_political_funds | complete | 10 | 10 | 10 | 36 | 6 |  |
+| tokyo_budget_settlement | complete | 10 | 10 | 10 | 20 | 0 |  |
+| tokyo_procurement | complete | 10 | 10 | 10 | 30 | 0 |  |
+| tokyo_metro_grants | complete | 10 | 10 | 20 | 0 | 0 |  |
 | tokyo_audit_reports | complete | 10 | 10 | 40 | 40 | 0 |  |
 
 ## Non-goal guard
@@ -50,11 +50,6 @@ Phase 0 判定: `incomplete`
 | tokyo_procurement | ContractAward は確定 entity として生成しない / vendor 名寄せと契約案との突合は行わない |
 | tokyo_metro_grants | PublicMoneyFlow は生成しない / 個別交付先、金額、成果は生成しない |
 | tokyo_audit_reports | AuditFindingCandidate は公式文言を保持し、アプリ側評価語を混ぜない / public SpendingReviewSignal、score、ranking は生成しない |
-
-## 未達理由
-
-- 10 RawArtifact / SourceDocumentCandidate / EvidenceItem を満たす source family が 1 件で、必要な 5 件に届いていない。
-- 助成・補助金と監査 source の必須 gate のうち未達: tokyo_metro_grants
 
 ## 出典
 

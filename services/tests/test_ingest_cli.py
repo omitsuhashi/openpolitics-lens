@@ -171,28 +171,46 @@ def test_phase0_fixture_report_cli_writes_json_and_markdown(tmp_path: Path) -> N
 
     stdout_payload = json.loads(result.stdout)
     report_path = tmp_path / "phase0-fixture-report.json"
-    assert stdout_payload["phase0_status"] == "incomplete"
+    assert stdout_payload["phase0_status"] == "complete"
     assert stdout_payload["json_report_path"] == str(report_path)
     assert stdout_payload["markdown_report_path"] == str(knowledge_report)
     assert stdout_payload["forbidden_operations_not_used"] == [
         "browser_automation",
         "external_network",
+        "live_search",
         "ocr_execution",
         "pdf_download",
     ]
 
     report_payload = json.loads(report_path.read_text(encoding="utf-8"))
     rows_by_family = {row["source_family"]: row for row in report_payload["source_families"]}
-    assert len(rows_by_family) == 7
+    assert set(rows_by_family) == {
+        "tokyo_assembly_records_bills",
+        "tokyo_elections",
+        "tokyo_political_funds",
+        "tokyo_budget_settlement",
+        "tokyo_procurement",
+        "tokyo_metro_grants",
+        "tokyo_audit_reports",
+    }
+    assert report_payload["phase0_status"] == "complete"
+    assert report_payload["achieved_source_family_count"] == 7
+    assert report_payload["coverage_source_family_goal_met"] is True
+    assert report_payload["required_source_families_goal_met"] is True
+    assert report_payload["missing_required_source_families"] == []
+
+    for row in rows_by_family.values():
+        assert row["status"] == "complete"
+        assert row["raw_artifact_count"] >= 10
+        assert row["source_document_candidate_count"] >= 10
+        assert row["evidence_item_count"] >= 10
+        assert row["blocked_reason"] is None
+
+    assert rows_by_family["tokyo_metro_grants"]["status"] == "complete"
     assert rows_by_family["tokyo_audit_reports"]["status"] == "complete"
-    assert rows_by_family["tokyo_audit_reports"]["raw_artifact_count"] == 10
-    assert rows_by_family["tokyo_audit_reports"]["evidence_item_count"] >= 10
-    assert rows_by_family["tokyo_metro_grants"]["status"] == "blocked"
-    assert rows_by_family["tokyo_metro_grants"]["raw_artifact_count"] == 3
-    assert report_payload["phase0_status"] == "incomplete"
 
     markdown = knowledge_report.read_text(encoding="utf-8")
-    assert "Phase 0 判定: `incomplete`" in markdown
+    assert "Phase 0 判定: `complete`" in markdown
     assert "東京都監査事務局 財政援助団体等監査・包括外部監査" in markdown
     assert "都庁総合ホームページ 助成・補助金" in markdown
 
