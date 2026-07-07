@@ -366,3 +366,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 東京都監査 report index / report fixture、3 種類の audit `source_type` 分離、10 RawArtifact / SourceDocumentCandidate、10 EvidenceItem 以上、`AuditFindingCandidate` 5 件以上、official wording の locator / evidence trace、評価分類非生成 guard を実装した。
 - verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - fixture-only のため、live Tokyo audit retrieval、PDF download、OCR は未検証。`P0R-011` を次の実行可能 issue とし、`P0R-012` はまだ `P0R-011` 待ち。
+
+## [2026-07-07] execution-plan | Approve P0R-011 audit signal storage separation packet
+
+- `phase0-remainder-p0r-011-input-packet.json`、`phase0-remainder-p0r-011-execution-envelope.json`、`phase0-remainder-p0r-011-execution-handoff.md` を追加。
+- `P0R-010` head `ba3fd23e125ed1c502f1487a3b79258fd447b970` を blocker head base とし、`P0R-011` branch をそこから作る方針にした。
+- 実行対象は `AuditFindingCandidate` と `SpendingReviewSignalCandidate` の保存分離 contract に限定し、public UI、score、ranking、live source 取得、P0R-012 coverage CLI は非対象に残した。
