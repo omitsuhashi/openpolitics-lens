@@ -296,3 +296,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `normalize_assembly_bill_decision` で 10 EvidenceItem と `bill_decision_observed` direct claim を生成し、`VotePosition` を生成しない guard を追加した。
 - verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - fixture HTML と source URL は deterministic fixture data であり、live acquisition は非対象。`P0R-004` と `P0R-005` の `normalize/normalizer.py` 変更は final integration 時に統合対応が必要。
+
+## [2026-07-07] execution-plan | Approve P0R-006 election probe packet
+
+- `phase0-remainder-p0r-006-input-packet.json`、`phase0-remainder-p0r-006-execution-envelope.json`、`phase0-remainder-p0r-006-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001`、`P0R-002`、`P0R-003` も packet / envelope に含めた。
+- runtime reconciliation のため、既完了 sibling の `P0R-004` と `P0R-005` も dispatch 対象外の完了済み issue として packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-006` branch をそこから作る方針にした。
+- 実行対象は選挙公報・選挙結果 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、entity resolution、自動 merge、後続 source probe は非対象に残した。
