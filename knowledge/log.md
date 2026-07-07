@@ -303,3 +303,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - runtime reconciliation のため、既完了 sibling の `P0R-004` と `P0R-005` も dispatch 対象外の完了済み issue として packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-006` branch をそこから作る方針にした。
 - 実行対象は選挙公報・選挙結果 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、entity resolution、自動 merge、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-006 election results bulletins probe
+
+- `P0R-006` の worker 実装を review gate に通し、head `f7ec31dd23f5ac839a8efc30d45726b3affa0675` を local `PR_READY` として記録。
+- `services/ingest/phase0_sources.py` に `tokyo_elections` fixture harness を追加し、選挙結果 HTML / PDF fixture と選挙公報 metadata fixture を分けて 10 FetchManifestRecord / SourceDocumentCandidate を生成できるようにした。
+- `normalize_tokyo_election_candidate_observation` で 10 EvidenceItem、Candidate direct claim、選挙結果がある 6 件の ElectionResult direct claim を生成し、entity merge refs を拒否する guard を追加した。
+- verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- fixture-only のため、実際の東京都選挙 source parsing、PDF/OCR 挙動、live retrieval は未検証。`P0R-004`、`P0R-005`、`P0R-006` の `normalize/normalizer.py` 変更は final integration 時に統合対応が必要。
