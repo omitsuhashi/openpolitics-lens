@@ -64,6 +64,15 @@ CONFLICT_STATES: tuple[str, ...] = (
     "status_mismatch",
     "needs_review",
 )
+TRACKED_ASSERTION_CONFLICT_STATES: dict[str, str] = {
+    "scheduled_date": "date_mismatch",
+    "title": "title_mismatch",
+    "event_status": "status_mismatch",
+}
+MISMATCH_CONFLICT_FIELDS: dict[str, str] = {
+    conflict_state: asserted_field
+    for asserted_field, conflict_state in TRACKED_ASSERTION_CONFLICT_STATES.items()
+}
 
 
 def _datetime_to_json(value: datetime) -> str:
@@ -214,6 +223,32 @@ def _validate_assertions(
             raise ValueError("source_assertions must contain EventSourceAssertion records")
         if assertion.event_candidate_id != event_candidate_id:
             raise ValueError("source_assertions event_candidate_id must match event_candidate_id")
+
+
+def _validate_assertion_conflict_states(
+    candidate_values: JsonDict,
+    source_assertions: tuple["EventSourceAssertion", ...],
+) -> None:
+    for assertion in source_assertions:
+        expected_mismatch_state = TRACKED_ASSERTION_CONFLICT_STATES.get(assertion.asserted_field)
+        mismatch_field = MISMATCH_CONFLICT_FIELDS.get(assertion.conflict_state)
+        if mismatch_field is not None and mismatch_field != assertion.asserted_field:
+            raise ValueError(
+                f"{assertion.conflict_state} is only valid for {mismatch_field} assertions"
+            )
+
+        if expected_mismatch_state is None:
+            continue
+
+        expected_value = candidate_values[assertion.asserted_field]
+        if assertion.asserted_value != expected_value and assertion.conflict_state not in (
+            expected_mismatch_state,
+            "needs_review",
+        ):
+            raise ValueError(
+                f"{assertion.asserted_field} assertion differs from candidate; "
+                f"conflict_state must be {expected_mismatch_state} or needs_review"
+            )
 
 
 def _source_assertions_from_json(data: JsonDict) -> tuple["EventSourceAssertion", ...]:
@@ -463,6 +498,14 @@ class OfficialPoliticalEventCandidate:
         _validate_choice("review_state", self.review_state, REVIEW_STATES)
         _validate_str_tuple(self.limitations, "limitations")
         _validate_assertions(self.event_candidate_id, self.source_assertions)
+        _validate_assertion_conflict_states(
+            {
+                "scheduled_date": _date_to_json(self.scheduled_date),
+                "title": self.title,
+                "event_status": self.event_status,
+            },
+            self.source_assertions,
+        )
         if not any(
             assertion.source_document_id == self.source_document_id
             and assertion.evidence_item_id == self.evidence_item_id

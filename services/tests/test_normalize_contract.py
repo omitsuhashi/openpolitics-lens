@@ -353,6 +353,86 @@ def test_event_candidate_keeps_multiple_source_assertions_and_conflicts() -> Non
     assert normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json) == candidate
 
 
+@pytest.mark.parametrize(
+    ("asserted_field", "asserted_value", "expected_conflict_state"),
+    [
+        ("scheduled_date", "2026-07-20", "date_mismatch"),
+        ("title", "東京都知事選挙期日", "title_mismatch"),
+        ("event_status", "postponed", "status_mismatch"),
+    ],
+)
+def test_event_candidate_rejects_tracked_field_mismatch_without_conflict_state(
+    asserted_field: str,
+    asserted_value: str,
+    expected_conflict_state: str,
+) -> None:
+    assertion = _event_source_assertion(
+        asserted_field=asserted_field,
+        asserted_value=asserted_value,
+        conflict_state="none",
+    )
+
+    with pytest.raises(ValueError, match=expected_conflict_state):
+        _official_event_candidate(assertion)
+
+    candidate_json = _official_event_candidate().to_json_dict()
+    candidate_json["source_assertions"][0] = {
+        **candidate_json["source_assertions"][0],
+        "asserted_field": asserted_field,
+        "asserted_value": asserted_value,
+        "conflict_state": "none",
+    }
+
+    with pytest.raises(ValueError, match=expected_conflict_state):
+        normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json)
+
+
+@pytest.mark.parametrize(
+    ("asserted_field", "asserted_value", "wrong_conflict_state"),
+    [
+        ("scheduled_date", "2026-07-20", "title_mismatch"),
+        ("title", "東京都知事選挙期日", "status_mismatch"),
+        ("event_status", "postponed", "date_mismatch"),
+        ("canonical_url", "https://www.senkyo.metro.tokyo.lg.jp/other.html", "date_mismatch"),
+    ],
+)
+def test_event_candidate_rejects_mismatch_state_for_wrong_asserted_field(
+    asserted_field: str,
+    asserted_value: str,
+    wrong_conflict_state: str,
+) -> None:
+    assertion = _event_source_assertion(
+        asserted_field=asserted_field,
+        asserted_value=asserted_value,
+        conflict_state=wrong_conflict_state,
+    )
+
+    with pytest.raises(ValueError, match=wrong_conflict_state):
+        _official_event_candidate(assertion)
+
+    candidate_json = _official_event_candidate().to_json_dict()
+    candidate_json["source_assertions"][0] = {
+        **candidate_json["source_assertions"][0],
+        "asserted_field": asserted_field,
+        "asserted_value": asserted_value,
+        "conflict_state": wrong_conflict_state,
+    }
+
+    with pytest.raises(ValueError, match=wrong_conflict_state):
+        normalize.OfficialPoliticalEventCandidate.from_json_dict(candidate_json)
+
+
+def test_event_candidate_allows_tracked_field_mismatch_when_marked_needs_review() -> None:
+    assertion = _event_source_assertion(
+        asserted_value="2026-07-20",
+        conflict_state="needs_review",
+    )
+
+    candidate = _official_event_candidate(assertion)
+
+    assert candidate.conflict_states() == ("needs_review",)
+
+
 def test_event_candidates_require_evidence_backed_source_assertions() -> None:
     with pytest.raises(ValueError, match="source_assertions"):
         replace(_official_event_candidate(), source_assertions=())
