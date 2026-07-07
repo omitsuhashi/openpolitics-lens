@@ -288,3 +288,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-005-input-packet.json`、`phase0-remainder-p0r-005-execution-envelope.json`、`phase0-remainder-p0r-005-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001`、`P0R-002`、`P0R-003` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-005` branch をそこから作る方針にした。
 - 実行対象は都議会 提出議案・議決結果 probe の fixture-only 実装に限定し、個人別賛否、`VotePosition`、政策 stance / 意味分類、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-005 assembly bills decisions probe
+
+- `P0R-005` の worker 実装を review gate に通し、head `240bd37c26eda7ffdac5002a7ad21cda251c70cf` を local `PR_READY` として記録。
+- `services/ingest/tokyo_assembly_bills.py` を追加し、都議会 提出議案・議決結果の fixture-only probe、年度・定例会別 bill / decision fixture、10 RawArtifact / SourceDocumentCandidate を生成できるようにした。
+- `normalize_assembly_bill_decision` で 10 EvidenceItem と `bill_decision_observed` direct claim を生成し、`VotePosition` を生成しない guard を追加した。
+- verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- fixture HTML と source URL は deterministic fixture data であり、live acquisition は非対象。`P0R-004` と `P0R-005` の `normalize/normalizer.py` 変更は final integration 時に統合対応が必要。

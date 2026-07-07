@@ -14,7 +14,7 @@ spec_gate_commit: 90a2e00
 
 `OPL-PHASE0-REMAINDER-20260707` では、Roadmap の Phase 0 gate を満たすため、まず RawArtifact / Evidence / source registry の共通 contract を固め、その後 Roadmap 対象 source 7 系統の fixture-first probe を実装する。
 
-`P0R-001`、`P0R-002`、`P0R-003`、`P0R-004` は実装レビュー承認済みで local `PR_READY` になった。`P0R-005` から `P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
+`P0R-001` から `P0R-005` は実装レビュー承認済みで local `PR_READY` になった。`P0R-006` から `P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
 
 ## Ledger
 
@@ -24,7 +24,7 @@ spec_gate_commit: 90a2e00
 | OPL-PHASE0-REMAINDER-20260707 | P0R-002 | Evidence schema / warning / claim catalog を拡張する | 承認済み | PR_READY | P0R-001 | P0R-003 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-003 | Phase 0 source registry / fixture harness を作る | 承認済み | PR_READY | P0R-001, P0R-002 | P0R-004, P0R-005, P0R-006, P0R-007, P0R-008, P0R-009, P0R-010 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-004 | 都議会 会議録・速記録 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-005 | 都議会 提出議案・議決結果 probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-005 | 都議会 提出議案・議決結果 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-006 | 選挙公報・選挙結果 probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-007 | 政治資金収支報告書 probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-008 | 財務局・電子調達 契約/予算 probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
@@ -48,7 +48,7 @@ P0R-003 -> P0R-010 -> P0R-011 -> P0R-012
 P0R-010 -> P0R-012
 ```
 
-cycle はない。`P0R-001` から `P0R-004` は local `PR_READY` になったため、`P0R-005` から `P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
+cycle はない。`P0R-001` から `P0R-005` は local `PR_READY` になったため、`P0R-006` から `P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
 
 ## P0R-001: RawArtifact storage gate を確定する
 
@@ -233,6 +233,18 @@ git diff --check
 
 - 10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を fixture-only で生成する。
 - source に個人別賛否がない場合、`VotePosition` を生成しない guard がある。
+
+### 実装結果
+
+- branch: `codex/opl-phase0-remainder-20260707/P0R-005-assembly-bills-decisions-probe`
+- base: `7fb7c999aa4f67410379da2fa25a0cf248de2975`
+- head: `240bd37c26eda7ffdac5002a7ad21cda251c70cf`
+- review range: `7fb7c999aa4f67410379da2fa25a0cf248de2975..240bd37c26eda7ffdac5002a7ad21cda251c70cf`
+- 実装レビュー: 承認済み。独立レビューで Critical / Important / Minor なし。
+- 実装内容: `services/ingest/tokyo_assembly_bills.py` を追加し、都議会 提出議案・議決結果の fixture-only probe、年度・定例会別 bill / decision fixture、10 RawArtifact / SourceDocumentCandidate を生成できるようにした。`normalize_assembly_bill_decision` で 10 EvidenceItem と `bill_decision_observed` direct claim を生成し、`VotePosition` を生成しない guard を追加した。
+- verification: `uv run pytest -q` は 68 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: fixture HTML と source URL は deterministic fixture data であり、live Tokyo Assembly retrieval result ではない。`P0R-004` と `P0R-005` はいずれも `P0R-003` head から `normalize/normalizer.py` を拡張しているため、final integration 時に統合対応が必要。
+- blocker release: `P0R-012` はまだ `P0R-006` から `P0R-011` 待ち。次は `P0R-006` から `P0R-010` のいずれかを実行可能 issue とする。
 
 ## P0R-006: 選挙公報・選挙結果 probe を実装する
 
