@@ -240,3 +240,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - review 指摘に従い、外部 S3 endpoint / AWS credential fallback を PUT 前に拒否し、PUT 後の `head_object` unavailable を `skipped` ではなく failure として扱うようにした。
 - verification は `uv run pytest -q` 54 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。外部 endpoint guard は PUT 前の `status: failed` を確認した。
 - live MinIO PUT / HEAD は sandbox では未実行のため、`.env.local` と Docker Compose による手動 smoke は local 環境依存として残る。`P0R-002` の blocker を解除し、次の実行可能 issue とした。
+
+## [2026-07-07] execution-plan | Approve P0R-002 evidence contract packet
+
+- `phase0-remainder-p0r-002-input-packet.json`、`phase0-remainder-p0r-002-execution-envelope.json`、`phase0-remainder-p0r-002-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001` も packet / envelope に含めた。
+- `P0R-001` head `9045c8fd6aef5b41d29386e5514310c77f12f100` を blocker head base とし、`P0R-002` branch をそこから作る方針にした。
+- 実行対象は EvidenceItem / EvidenceClaim の schema、warning、locator、claim catalog 拡張に限定し、source registry、source probe、PDF/OCR 実行、live DB apply は非対象に残した。
