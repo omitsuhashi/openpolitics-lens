@@ -254,3 +254,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `EvidenceClaim` は claim type / predicate catalog を code-side に持つようにし、`grant_program_page_title_observed` だけに閉じた制限を外した。low confidence、blocking warning、locator 不足では claim 昇格しない guard を追加した。
 - verification は `uv run pytest -q` 60 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - live database migration apply は未実施のまま残し、`P0R-003` の blocker を解除して次の実行可能 issue とした。
+
+## [2026-07-07] execution-plan | Approve P0R-003 source registry packet
+
+- `phase0-remainder-p0r-003-input-packet.json`、`phase0-remainder-p0r-003-execution-envelope.json`、`phase0-remainder-p0r-003-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001` と `P0R-002` も packet / envelope に含めた。
+- `P0R-002` head `a66fca34b24a965fae35d2611abf023a1b69c941` を blocker head base とし、`P0R-003` branch をそこから作る方針にした。
+- 実行対象は Roadmap 対象 source 7 系統の source registry、fixture metadata、coverage target、fixture harness に限定し、individual source probe、live acquisition、PDF/OCR 実行は非対象に残した。

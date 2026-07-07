@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/4f07/openpolitics-lens",
+  "epic_id": "opl-phase0-remainder-20260707",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/phase0-remainder-implementation-design.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:ca3d19eaf005fa52ac942b181759aa120b1b96835cc59de5b14bafb4ff9914a9"
+  },
+  "work_items": [
+    {
+      "id": "P0R-001",
+      "title": "RawArtifact storage gate を確定する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": ["P0R-001 は local PR_READY 済み"],
+      "verification": ["P0R-001 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/tests", "path:packages/db"],
+      "dependencies": []
+    },
+    {
+      "id": "P0R-002",
+      "title": "Evidence schema / warning / claim catalog を拡張する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": ["P0R-002 は local PR_READY 済み"],
+      "verification": ["P0R-002 review approved"],
+      "write_scope": ["path:services/normalize", "path:services/tests", "path:packages/db"],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    {
+      "id": "P0R-003",
+      "title": "Phase 0 source registry / fixture harness を作る",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": [
+        "Roadmap 対象 source 7 系統すべてが registry に現れる",
+        "fixture harness が source family ごとの RawArtifact / SourceDocumentCandidate / EvidenceItem 件数を集計できる",
+        "P0R-004 から P0R-010 が同じ registry / fixture harness を使える",
+        "通常 test が外部 network、browser automation、PDF download、OCR 実行を行わない guard がある"
+      ],
+      "non_goals": [
+        "P0R-004 以降の individual source probe は実装しない",
+        "live source 取得、PDF download、browser automation、OCR 実行は行わない",
+        "SubsidyProgramCandidate、AuditFindingCandidate、PublicMoneyFlow、SpendingReviewSignal は生成しない",
+        "live database migration apply、remote write、GitHub Issue mirror、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/normalize",
+        "path:services/tests"
+      ],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "none"
+        },
+        {
+          "issue": "P0R-002",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    }
+  ],
+  "delivery_intent": "local_only"
+}
