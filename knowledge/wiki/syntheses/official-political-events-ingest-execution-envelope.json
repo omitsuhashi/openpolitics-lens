@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "epic_id": "opl-official-political-events-20260707",
-  "revision": 1,
+  "revision": 2,
   "epic_base": {
     "ref": "codex/opl-official-political-events-20260707/epic-base",
     "sha": "c870f7a1e485d62fb413c59084bb2d7cfd61640e",
@@ -71,8 +71,8 @@
     "integration_branch_policy": "approved_integration_work_item_only"
   },
   "remote_write_policy": {
-    "mode": "local_only",
-    "approved_actions": []
+    "mode": "per_action",
+    "approved_actions": ["final_pr_push_head", "final_pr_create_draft"]
   },
   "work_items": {
     "G2PR-008": {

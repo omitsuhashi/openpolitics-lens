@@ -244,3 +244,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 初回レビューで empty registry の complete 誤判定と registry 側 duplicate `coverage_key` 未検出が指摘され、修正 cycle で `required_registry_configured` と registry duplicate guard を追加した。修正後レビューで Critical / Important / Minor なし。
 - verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 71 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
 - 初回 PR 範囲 `G2PR-008` から `G2PR-010` はすべて local `PR_READY`。remote write / push / PR 作成は local-only policy により未実施。
+
+## [2026-07-07] delivery | Approve official political events draft PR
+
+- ユーザーの `PR作成までお願いします。` により、execution envelope revision 2 で remote write policy を `per_action` に更新。
+- 承認 remote action は `final_pr_push_head` と `final_pr_create_draft` に限定する。
+- PR は draft とし、final merge は human-only のまま扱う。
