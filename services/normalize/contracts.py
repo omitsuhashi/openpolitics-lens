@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
@@ -129,6 +130,28 @@ CLAIM_TYPE_CATALOG: dict[str, ClaimCatalogEntry] = {
     entry.claim_type: entry for entry in _CLAIM_CATALOG_ENTRIES
 }
 PREDICATE_CATALOG: frozenset[str] = frozenset(entry.predicate for entry in _CLAIM_CATALOG_ENTRIES)
+AUDIT_REPORT_SOURCE_TYPES: frozenset[str] = frozenset(
+    {
+        "financial_aid_organization_audit_report",
+        "comprehensive_external_audit_report",
+        "audit_measure_status_report",
+    }
+)
+AUDIT_FINDING_PROHIBITED_APP_CLASSIFICATIONS: frozenset[str] = frozenset(
+    {
+        "無駄遣い",
+        "不正",
+        "違法",
+    }
+)
+AUDIT_FINDING_REQUIRED_TRACE_FIELDS: frozenset[str] = frozenset(
+    {
+        "fiscal_year",
+        "audited_entity",
+        "finding_text",
+        "measure_status",
+    }
+)
 
 
 def _datetime_to_json(value: datetime) -> str:
@@ -358,15 +381,109 @@ def build_observed_claim(
     )
 
 
+def validate_audit_finding_no_app_classification(labels: Iterable[str]) -> None:
+    prohibited = sorted(set(labels) & AUDIT_FINDING_PROHIBITED_APP_CLASSIFICATIONS)
+    if prohibited:
+        msg = "audit finding classification is out of scope: " + ", ".join(prohibited)
+        raise ValueError(msg)
+
+
+@dataclass(frozen=True, slots=True)
+class AuditFindingCandidate:
+    audit_finding_candidate_id: str
+    source_document_id: str
+    source_type: str
+    fiscal_year: str
+    audited_entity: str
+    finding_text: str
+    measure_status: str
+    evidence_item_ids: tuple[str, ...]
+    field_evidence_item_ids: JsonDict
+
+    def __post_init__(self) -> None:
+        if self.source_type not in AUDIT_REPORT_SOURCE_TYPES:
+            msg = f"unsupported audit report source_type: {self.source_type}"
+            raise ValueError(msg)
+        if not self.evidence_item_ids:
+            msg = "AuditFindingCandidate requires evidence_item_ids"
+            raise ValueError(msg)
+
+        missing_trace_fields = sorted(
+            AUDIT_FINDING_REQUIRED_TRACE_FIELDS - set(self.field_evidence_item_ids)
+        )
+        if missing_trace_fields:
+            msg = "AuditFindingCandidate missing field evidence trace: " + ", ".join(
+                missing_trace_fields
+            )
+            raise ValueError(msg)
+
+        for field_name in AUDIT_FINDING_REQUIRED_TRACE_FIELDS:
+            value = getattr(self, field_name)
+            if not value.strip():
+                msg = f"AuditFindingCandidate field is empty: {field_name}"
+                raise ValueError(msg)
+
+        object.__setattr__(self, "evidence_item_ids", tuple(self.evidence_item_ids))
+        object.__setattr__(self, "field_evidence_item_ids", dict(self.field_evidence_item_ids))
+
+    def to_json_dict(self) -> JsonDict:
+        return {
+            "audit_finding_candidate_id": self.audit_finding_candidate_id,
+            "source_document_id": self.source_document_id,
+            "source_type": self.source_type,
+            "fiscal_year": self.fiscal_year,
+            "audited_entity": self.audited_entity,
+            "finding_text": self.finding_text,
+            "measure_status": self.measure_status,
+            "evidence_item_ids": list(self.evidence_item_ids),
+            "field_evidence_item_ids": dict(self.field_evidence_item_ids),
+        }
+
+
+def build_audit_finding_candidate(
+    *,
+    audit_finding_candidate_id: str,
+    source_document_id: str,
+    source_type: str,
+    fiscal_year: str,
+    audited_entity: str,
+    finding_text: str,
+    measure_status: str,
+    field_evidence_item_ids: JsonDict,
+    app_classification_labels: Iterable[str] = (),
+) -> AuditFindingCandidate:
+    validate_audit_finding_no_app_classification(app_classification_labels)
+    evidence_item_ids = tuple(
+        str(field_evidence_item_ids[field_name])
+        for field_name in sorted(AUDIT_FINDING_REQUIRED_TRACE_FIELDS)
+    )
+
+    return AuditFindingCandidate(
+        audit_finding_candidate_id=audit_finding_candidate_id,
+        source_document_id=source_document_id,
+        source_type=source_type,
+        fiscal_year=fiscal_year,
+        audited_entity=audited_entity,
+        finding_text=finding_text,
+        measure_status=measure_status,
+        evidence_item_ids=evidence_item_ids,
+        field_evidence_item_ids=field_evidence_item_ids,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class NormalizeResult:
     source_document: SourceDocument
     evidence_items: tuple[EvidenceItem, ...]
     evidence_claims: tuple[EvidenceClaim, ...]
+    audit_finding_candidates: tuple[AuditFindingCandidate, ...] = ()
 
     def to_json_dict(self) -> JsonDict:
         return {
             "source_document": self.source_document.to_json_dict(),
             "evidence_items": [item.to_json_dict() for item in self.evidence_items],
             "evidence_claims": [claim.to_json_dict() for claim in self.evidence_claims],
+            "audit_finding_candidates": [
+                candidate.to_json_dict() for candidate in self.audit_finding_candidates
+            ],
         }

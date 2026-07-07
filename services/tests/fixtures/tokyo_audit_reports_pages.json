@@ -1,0 +1,92 @@
+[
+  {
+    "path": "/reports/financial-aid-2023-01.html",
+    "title": "令和5年度 財政援助団体等監査結果報告（公益財団法人東京都スポーツ文化事業団）",
+    "source_type": "financial_aid_organization_audit_report",
+    "fiscal_year": "令和5年度",
+    "audited_entity": "公益財団法人東京都スポーツ文化事業団",
+    "finding_text": "事業実績報告書の確認手続について、証拠書類との照合記録を整理して保存する必要がある。",
+    "measure_status": "改善に向けて確認記録の様式を見直した。"
+  },
+  {
+    "path": "/reports/financial-aid-2023-02.html",
+    "title": "令和5年度 財政援助団体等監査結果報告（社会福祉法人東京都社会福祉協議会）",
+    "source_type": "financial_aid_organization_audit_report",
+    "fiscal_year": "令和5年度",
+    "audited_entity": "社会福祉法人東京都社会福祉協議会",
+    "finding_text": "補助対象経費の区分について、交付要綱に基づく確認結果を明確に記録する必要がある。",
+    "measure_status": "関係書類の点検手順を整備した。"
+  },
+  {
+    "path": "/reports/financial-aid-2022-01.html",
+    "title": "令和4年度 財政援助団体等監査結果報告（公益財団法人東京都環境公社）",
+    "source_type": "financial_aid_organization_audit_report",
+    "fiscal_year": "令和4年度",
+    "audited_entity": "公益財団法人東京都環境公社",
+    "finding_text": "委託事業の履行確認について、確認日及び確認者を記録した資料を保存する必要がある。",
+    "measure_status": "履行確認簿を作成し保存することとした。"
+  },
+  {
+    "path": "/reports/financial-aid-2022-02.html",
+    "title": "令和4年度 財政援助団体等監査結果報告（公益財団法人東京都歴史文化財団）",
+    "source_type": "financial_aid_organization_audit_report",
+    "fiscal_year": "令和4年度",
+    "audited_entity": "公益財団法人東京都歴史文化財団",
+    "finding_text": "備品管理台帳と現物の照合結果について、定期的な確認状況を記録する必要がある。",
+    "measure_status": "年次点検の記録欄を台帳に追加した。"
+  },
+  {
+    "path": "/reports/external-2023-01.html",
+    "title": "令和5年度 包括外部監査結果報告書（都立施設の管理運営に関する事務）",
+    "source_type": "comprehensive_external_audit_report",
+    "fiscal_year": "令和5年度",
+    "audited_entity": "生活文化スポーツ局",
+    "finding_text": "指定管理者から提出される月次報告の確認結果について、所管局の判断過程を記録することが望ましい。",
+    "measure_status": "確認結果を記録するチェックシートを導入した。"
+  },
+  {
+    "path": "/reports/external-2023-02.html",
+    "title": "令和5年度 包括外部監査結果報告書（補助金等に関する事務）",
+    "source_type": "comprehensive_external_audit_report",
+    "fiscal_year": "令和5年度",
+    "audited_entity": "福祉局",
+    "finding_text": "補助事業の実績確認に当たり、対象経費の算定根拠を確認した記録を残すことが望ましい。",
+    "measure_status": "実績確認時の記録項目を追加した。"
+  },
+  {
+    "path": "/reports/external-2022-01.html",
+    "title": "令和4年度 包括外部監査結果報告書（契約に関する事務）",
+    "source_type": "comprehensive_external_audit_report",
+    "fiscal_year": "令和4年度",
+    "audited_entity": "財務局",
+    "finding_text": "契約変更の理由について、決裁文書に具体的な経過を記載することが望ましい。",
+    "measure_status": "契約変更理由の記載例を周知した。"
+  },
+  {
+    "path": "/reports/measure-2023-01.html",
+    "title": "令和5年度 監査結果に基づき講じた措置の状況",
+    "source_type": "audit_measure_status_report",
+    "fiscal_year": "令和5年度",
+    "audited_entity": "教育庁",
+    "finding_text": "学校施設修繕の進行管理について、進捗状況を定期的に確認する必要がある。",
+    "measure_status": "進捗管理表を作成し、月次で確認している。"
+  },
+  {
+    "path": "/reports/measure-2022-01.html",
+    "title": "令和4年度 監査結果に基づき講じた措置の状況",
+    "source_type": "audit_measure_status_report",
+    "fiscal_year": "令和4年度",
+    "audited_entity": "建設局",
+    "finding_text": "道路維持工事の完了確認について、写真資料の保存方法を統一する必要がある。",
+    "measure_status": "写真資料の保存場所及び命名規則を定めた。"
+  },
+  {
+    "path": "/reports/measure-2021-01.html",
+    "title": "令和3年度 監査結果に基づき講じた措置の状況",
+    "source_type": "audit_measure_status_report",
+    "fiscal_year": "令和3年度",
+    "audited_entity": "水道局",
+    "finding_text": "資材在庫の管理について、棚卸結果と帳簿との差異を確認する必要がある。",
+    "measure_status": "棚卸差異の確認手順を改定した。"
+  }
+]

@@ -1,29 +1,40 @@
 from normalize.contracts import (
+    AUDIT_FINDING_PROHIBITED_APP_CLASSIFICATIONS,
+    AUDIT_REPORT_SOURCE_TYPES,
     CLAIM_TYPE_CATALOG,
     PREDICATE_CATALOG,
     WARNING_CATALOG,
+    AuditFindingCandidate,
     ClaimCatalogEntry,
     EvidenceClaim,
     EvidenceItem,
     NormalizeResult,
     SourceDocument,
+    build_audit_finding_candidate,
     build_observed_claim,
     can_promote_to_evidence_claim,
     claim_catalog_entry,
+    validate_audit_finding_no_app_classification,
 )
-from normalize.normalizer import normalize_grant_program_page
+from normalize.normalizer import normalize_audit_report_fixture, normalize_grant_program_page
 
 __all__ = [
+    "AUDIT_FINDING_PROHIBITED_APP_CLASSIFICATIONS",
+    "AUDIT_REPORT_SOURCE_TYPES",
     "CLAIM_TYPE_CATALOG",
     "PREDICATE_CATALOG",
     "WARNING_CATALOG",
+    "AuditFindingCandidate",
     "ClaimCatalogEntry",
     "EvidenceClaim",
     "EvidenceItem",
     "NormalizeResult",
     "SourceDocument",
+    "build_audit_finding_candidate",
     "build_observed_claim",
     "can_promote_to_evidence_claim",
     "claim_catalog_entry",
+    "normalize_audit_report_fixture",
     "normalize_grant_program_page",
+    "validate_audit_finding_no_app_classification",
 ]

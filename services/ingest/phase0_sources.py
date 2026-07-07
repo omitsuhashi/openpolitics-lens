@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from hashlib import sha256
 
 from ingest.contracts import ConnectorDefinition, JsonDict, JurisdictionProfile, SourceFamily
+from ingest.tokyo_audit_reports import TOKYO_AUDIT_REPORTS_CONNECTOR
 from ingest.tokyo_metro_grants import TOKYO_METRO_GRANTS_CONNECTOR
 
 NORMAL_TEST_FORBIDDEN_OPERATIONS: frozenset[str] = frozenset(
@@ -256,14 +257,7 @@ PHASE0_SOURCE_REGISTRY: dict[str, Phase0SourceRegistryEntry] = {
         roadmap_source_labels=("都庁総合ホームページ 助成・補助金",),
     ),
     "tokyo_audit_reports": Phase0SourceRegistryEntry(
-        connector=_connector(
-            connector_id="jp_tokyo.audit_reports.v1",
-            source_family="tokyo_audit_reports",
-            source_system="tokyo_audit_and_inspection_office",
-            display_name="東京都監査事務局 監査報告",
-            start_url="https://www.kansa.metro.tokyo.lg.jp/",
-            terms_note="official Tokyo audit and inspection office public website pages",
-        ),
+        connector=TOKYO_AUDIT_REPORTS_CONNECTOR,
         source_type="audit_report_or_measure_report",
         retrieval_method="static_html_index + pdf_batch",
         evidence_granularity="audit_finding_or_measure_status",
@@ -300,7 +294,7 @@ PHASE0_FIXTURE_CATALOG: dict[str, FixtureMetadata] = {
         byte_size=len(entry.connector.start_url.encode("utf-8")),
         content_hash=_fixture_hash(f"{source_family}-fixture-baseline"),
         source_type=entry.source_type,
-        expected_evidence_item_count=1,
+        expected_evidence_item_count=10 if source_family == "tokyo_audit_reports" else 1,
     )
     for source_family, entry in PHASE0_SOURCE_REGISTRY.items()
 }

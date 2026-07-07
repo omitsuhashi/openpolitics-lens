@@ -35,6 +35,15 @@ from ingest.storage_smoke import (
     StorageUnavailable,
     run_storage_smoke,
 )
+from ingest.tokyo_audit_reports import (
+    AUDIT_REPORT_SOURCE_TYPES,
+    TOKYO_AUDIT_REPORTS_CONNECTOR,
+    AuditReportIndexRecord,
+    FakeTokyoAuditReportsFetcher,
+    FakeTokyoAuditReportsResponse,
+    TokyoAuditReportsConnector,
+    build_audit_report_fixture_html,
+)
 from ingest.tokyo_metro_grants import (
     TOKYO_METRO_GRANTS_CONFIG,
     TOKYO_METRO_GRANTS_CONNECTOR,
@@ -45,10 +54,14 @@ from ingest.tokyo_metro_grants import (
 )
 
 __all__ = [
+    "AUDIT_REPORT_SOURCE_TYPES",
+    "AuditReportIndexRecord",
     "ConnectorDefinition",
     "DiscoveryRecord",
     "FetchManifestRecord",
     "FileSystemOutputWriter",
+    "FakeTokyoAuditReportsFetcher",
+    "FakeTokyoAuditReportsResponse",
     "FakeTokyoMetroGrantsFetcher",
     "FakeTokyoMetroGrantsResponse",
     "FixtureCoverageSample",
@@ -73,10 +86,13 @@ __all__ = [
     "StorageSmokeError",
     "StorageSmokeResult",
     "StorageUnavailable",
+    "TOKYO_AUDIT_REPORTS_CONNECTOR",
     "TOKYO_METRO_GRANTS_CONFIG",
     "TOKYO_METRO_GRANTS_CONNECTOR",
+    "TokyoAuditReportsConnector",
     "TokyoMetroGrantsConfig",
     "TokyoMetroGrantsConnector",
+    "build_audit_report_fixture_html",
     "build_fetch_manifest_db_rows",
     "build_fixture_coverage_sample",
     "content_sha256",
