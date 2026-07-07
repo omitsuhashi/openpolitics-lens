@@ -274,3 +274,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-004-input-packet.json`、`phase0-remainder-p0r-004-execution-envelope.json`、`phase0-remainder-p0r-004-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001`、`P0R-002`、`P0R-003` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-004` branch をそこから作る方針にした。
 - 実行対象は都議会 会議録・速記録 probe の fixture-only 実装に限定し、live search、browser automation、政策 stance / 意味分類、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-004 assembly records fixture probe
+
+- `P0R-004` の worker 実装を review gate に通し、head `73931c27f20628a58318c0a07db92ef42507b6fa` を local `PR_READY` として記録。
+- `services/ingest/tokyo_assembly_records.py` を追加し、都議会 会議録・速記録の fixture-only probe、検索 snapshot metadata、meeting / speaker / speech block locator、10 RawArtifact / SourceDocumentCandidate を生成できるようにした。
+- `normalize_assembly_records_search_snapshot` で 10 EvidenceItem と `speech_text_observed` direct claim を生成し、政策 stance / 意味分類は生成しない guard を追加した。
+- verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- live search / browser automation は通常 test に入らず、fixture contents は deterministic synthetic snapshot として扱う。
