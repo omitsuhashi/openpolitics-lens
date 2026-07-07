@@ -177,3 +177,8 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `fixture` は local HTML と fake fetcher だけを使う deterministic verification path とした。
 - `run` は将来の cron / daily ingest 用 entrypoint として予約し、live fetch 実装前は network request を行わず status 2 で終了する。
 - `services/ingest/README.md` と `tokyo-subsidy-ingest-spec.md` / issue ledger を `--live` 廃止後の方針へ更新。
+
+## [2026-07-07] review-fix | Align ingest packets with current spec
+
+- code review 指摘に従い、ingest input packet と follow-up input packet の `approved_hash` を現行 `tokyo-subsidy-ingest-spec.md` の hash に更新。
+- `G2PR-003` の input packet acceptance criteria を `tokyo-metro-grants fixture` / `run` 分離と `--live` 廃止後の CLI 方針へ揃えた。

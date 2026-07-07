@@ -6,7 +6,7 @@
   "spec": {
     "path": "knowledge/wiki/syntheses/tokyo-subsidy-ingest-spec.md",
     "approved_revision": 1,
-    "approved_hash": "sha256:1eaa06933809a1a00a3edbcb56d8369b6b3b160a3e8a83db8443f79d0a60076f"
+    "approved_hash": "sha256:326d9533de2b6f929e0f7cf732080aa4d3388ec4e4c189c74ad6199436d46479"
   },
   "work_items": [
     {
@@ -92,9 +92,11 @@
       },
       "acceptance_criteria": [
         "fixture 入力と output directory を受け取る CLI を追加する",
-        "live fetch は明示 option にし、通常 command と test では使わない",
+        "cron / daily ingest 用の run と local deterministic verification 用の fixture を分ける",
+        "live fetch 実装前の run は network request を行わず終了する。--live option は使わない",
         "README に ingest/normalize 境界、Jurisdiction Profile、output layout、検証 command を書く",
-        "CLI の fixture mode が local file だけで動く",
+        "CLI の fixture command が local file だけで動く",
+        "CLI に --live option が存在しない",
         "generated output は git 管理されない"
       ],
       "non_goals": [
