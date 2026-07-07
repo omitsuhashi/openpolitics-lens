@@ -35,6 +35,12 @@ from ingest.storage_smoke import (
     StorageUnavailable,
     run_storage_smoke,
 )
+from ingest.tokyo_assembly_bills import (
+    TOKYO_ASSEMBLY_BILL_DECISION_FIXTURES,
+    TOKYO_ASSEMBLY_BILLS_CONNECTOR,
+    TokyoAssemblyBillDecisionFixture,
+    build_tokyo_assembly_bill_decision_fixture_records,
+)
 from ingest.tokyo_assembly_records import (
     TOKYO_ASSEMBLY_RECORDS_MEDIA_TYPE,
     TOKYO_ASSEMBLY_RECORDS_SEARCH_SNAPSHOT,
@@ -101,6 +107,8 @@ __all__ = [
     "StorageSmokeError",
     "StorageSmokeResult",
     "StorageUnavailable",
+    "TOKYO_ASSEMBLY_BILLS_CONNECTOR",
+    "TOKYO_ASSEMBLY_BILL_DECISION_FIXTURES",
     "TOKYO_ASSEMBLY_RECORDS_MEDIA_TYPE",
     "TOKYO_ASSEMBLY_RECORDS_SEARCH_SNAPSHOT",
     "TOKYO_ASSEMBLY_RECORDS_SOURCE_FAMILY",
@@ -108,12 +116,14 @@ __all__ = [
     "TOKYO_AUDIT_REPORTS_CONNECTOR",
     "TOKYO_METRO_GRANTS_CONFIG",
     "TOKYO_METRO_GRANTS_CONNECTOR",
+    "TokyoAssemblyBillDecisionFixture",
     "TokyoAuditReportsConnector",
     "TokyoMetroGrantsConfig",
     "TokyoMetroGrantsConnector",
     "build_audit_report_fixture_html",
     "build_fetch_manifest_db_rows",
     "build_fixture_coverage_sample",
+    "build_tokyo_assembly_bill_decision_fixture_records",
     "build_tokyo_assembly_records_fixture_probe",
     "content_sha256",
     "run_storage_smoke",

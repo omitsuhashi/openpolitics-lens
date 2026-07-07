@@ -26,6 +26,8 @@ from normalize.contracts import (
     validate_audit_finding_no_app_classification,
 )
 from normalize.normalizer import (
+    build_vote_positions_from_bill_decision_fixture,
+    normalize_assembly_bill_decision,
     normalize_assembly_records_search_snapshot,
     normalize_audit_report_fixture,
     normalize_grant_program_page,
@@ -53,9 +55,11 @@ __all__ = [
     "SpendingReviewSignalCandidate",
     "build_audit_finding_candidate",
     "build_observed_claim",
+    "build_vote_positions_from_bill_decision_fixture",
     "candidate_claim_catalog_entry",
     "can_promote_to_evidence_claim",
     "claim_catalog_entry",
+    "normalize_assembly_bill_decision",
     "normalize_assembly_records_search_snapshot",
     "normalize_audit_report_fixture",
     "normalize_grant_program_page",
