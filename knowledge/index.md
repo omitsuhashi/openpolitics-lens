@@ -14,6 +14,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 ### データ取得方針を確認する
 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
+- [Official Political Events Ingest Spec](wiki/syntheses/official-political-events-ingest-spec.md) — 国・地方自治体を横断して公式サイトから選挙・政治イベントを取得する source registry / event ingest 設計。
 - [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都補助金・助成金 first の ingest 初期仕様と後続 issue 方針。
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の契約・入札、予算・決算、監査、政治資金、会議録・議案 connector 設計。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
@@ -57,6 +58,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: domain model, glossary, evidence, actor, vote, funding, contract, ドメイン, 証拠, 関係
 - [Data Sources](data-sources.md) — 国会・自治体・政治資金・契約・予算・選挙公報の取得設計。
   検索語: data source, ingest, API, crawler, municipality, 自治体, データ取得
+- [Official Political Events Ingest Spec](wiki/syntheses/official-political-events-ingest-spec.md) — 国・都道府県・市区町村の公式 source から選挙、国会、地方議会、パブコメ、審議会イベントを取得するための source registry と event contract。
+  検索語: election, political event, source registry, official source, coverage ledger, jurisdiction, 選挙, 政治イベント, 公式サイト, 自治体, 国会
 - [Spending Review](spending-review.md) — 補助金、契約、予算、決算、監査指摘から支出検証シグナルを作る設計。
   検索語: spending review, subsidy, contract, audit, public money, 支出検証, 補助金, 監査
 - [Scoring](scoring.md) — 断定を避けたスコアと explainability の設計。

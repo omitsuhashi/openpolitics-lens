@@ -182,3 +182,16 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - code review 指摘に従い、ingest input packet と follow-up input packet の `approved_hash` を現行 `tokyo-subsidy-ingest-spec.md` の hash に更新。
 - `G2PR-003` の input packet acceptance criteria を `tokyo-metro-grants fixture` / `run` 分離と `--live` 廃止後の CLI 方針へ揃えた。
+
+## [2026-07-07] design | Official political events ingest spec draft
+
+- `wiki/syntheses/official-political-events-ingest-spec.md` を追加し、`OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Spec Gate draft を作成。
+- 国・都道府県・市区町村を横断する選挙・政治イベント取得を、単一 API ではなく source registry、coverage ledger、source family connector 群として設計する方針を記録。
+- `OfficialPoliticalEventCandidate`、`EventSourceAssertion`、`SourceCoverageRecord`、`officiality_level`、`coverage_status`、fixture-first / live-gated acquisition を採用判断として記録。
+- `index.md` に公式政治イベント取得設計への入口を追加。
+
+## [2026-07-07] gate | Approve official political events ingest spec
+
+- `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Spec Gate を承認済みに更新。
+- 承認範囲は、選挙と会議を必須 coverage target とし、未対応 source、未確認 jurisdiction、検索 UI 依存、PDF 依存、取得失敗を黙って欠落させず `SourceCoverageRecord` に残す方針。
+- 「全国横断の単一 API」ではなく、source registry、coverage ledger、source family connector 群で漏れを可視化しながら取得対象を広げる設計を承認。
