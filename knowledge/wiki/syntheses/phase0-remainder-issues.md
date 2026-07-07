@@ -3,7 +3,7 @@ kind: synthesis
 created: 2026-07-07
 updated: 2026-07-07
 epic_id: OPL-PHASE0-REMAINDER-20260707
-status: issue-gate-approved
+status: implementation-active
 spec: phase0-remainder-implementation-design.md
 spec_gate_commit: 90a2e00
 ---
@@ -14,14 +14,14 @@ spec_gate_commit: 90a2e00
 
 `OPL-PHASE0-REMAINDER-20260707` では、Roadmap の Phase 0 gate を満たすため、まず RawArtifact / Evidence / source registry の共通 contract を固め、その後 Roadmap 対象 source 7 系統の fixture-first probe を実装する。
 
-Issue Gate 承認後、`P0R-001` だけが直ちに実行可能である。`P0R-002` 以降は blocker 完了後に実行可能になる。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
+`P0R-001` は実装レビュー承認済みで local `PR_READY` になった。これにより `P0R-002` が次の実行可能 issue になった。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
 
 ## Ledger
 
 | Epic ID | ローカルID | タイトル | レビュー状態 | 実行状態 | ブロック元 | ブロック先 | GitHub Issue | 実装レビュー | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-001 | RawArtifact storage gate を確定する | 承認済み | 実行可能 | なし | P0R-002, P0R-003 | 未作成 | 未実施 | 未作成 |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-002 | Evidence schema / warning / claim catalog を拡張する | 承認済み | ブロック中 | P0R-001 | P0R-003 | 未作成 | 未実施 | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-001 | RawArtifact storage gate を確定する | 承認済み | PR_READY | なし | P0R-002, P0R-003 | 未作成 | 承認済み | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-002 | Evidence schema / warning / claim catalog を拡張する | 承認済み | 実行可能 | P0R-001 | P0R-003 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-003 | Phase 0 source registry / fixture harness を作る | 承認済み | ブロック中 | P0R-001, P0R-002 | P0R-004, P0R-005, P0R-006, P0R-007, P0R-008, P0R-009, P0R-010 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-004 | 都議会 会議録・速記録 probe を実装する | 承認済み | ブロック中 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-005 | 都議会 提出議案・議決結果 probe を実装する | 承認済み | ブロック中 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
@@ -48,7 +48,7 @@ P0R-003 -> P0R-010 -> P0R-011 -> P0R-012
 P0R-010 -> P0R-012
 ```
 
-cycle はない。Issue Gate 承認後、`P0R-001` だけが直ちに実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
+cycle はない。`P0R-001` は local `PR_READY` になったため、`P0R-002` が次に実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
 
 ## P0R-001: RawArtifact storage gate を確定する
 
@@ -90,6 +90,18 @@ uv run python -m ingest storage-smoke \
   --bucket openpolitics-raw \
   --endpoint http://localhost:9000
 ```
+
+### 実装結果
+
+- branch: `codex/opl-phase0-remainder-20260707/P0R-001-rawartifact-storage-gate`
+- base: `f63f6afefadc4da323cc2a11d5eea53a3f472f81`
+- head: `9045c8fd6aef5b41d29386e5514310c77f12f100`
+- review range: `f63f6afefadc4da323cc2a11d5eea53a3f472f81..9045c8fd6aef5b41d29386e5514310c77f12f100`
+- 実装レビュー: 承認済み。初回レビューで `storage-smoke` が任意の外部 S3 endpoint / AWS credential fallback を採用できる点と、PUT 後の metadata verification 不可を `skipped` にしていた点を修正した。再レビューで Critical / Important / Minor なし。
+- 実装内容: `compose.yaml` の `minio-init` one-shot 化、local MinIO smoke CLI、S3 互換 PUT / HEAD metadata verification、RDB `raw_artifacts` payload 照合、local endpoint guard、fake object storage tests、README / local infrastructure docs を追加した。
+- verification: `uv run pytest -q` は 54 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。外部 endpoint guard は `storage-smoke --endpoint https://s3.ap-northeast-1.amazonaws.com` が PUT 前に `status: failed` で終了することを確認した。
+- 残リスク: この sandbox では live MinIO PUT / HEAD は未実行。`docker compose --env-file .env.local up -d minio minio-init` 後の手動 smoke は local Docker / MinIO 環境依存として残る。
+- blocker release: `P0R-002` を次の実行可能 issue とする。
 
 ## P0R-002: Evidence schema / warning / claim catalog を拡張する
 

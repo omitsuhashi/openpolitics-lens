@@ -232,3 +232,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - Execution Envelope は schema version 3 とし、`phase_branch_policy`、worker-only execution、local-only remote policy を明示した。
 - 実行対象は最初の runnable issue である `P0R-001` に限定し、`P0R-002` 以降は blocker graph に残した。
 - execution prereq、input packet validation、execution envelope validation、capability preflight、`git diff --check` は通過。
+
+## [2026-07-07] implementation | P0R-001 RawArtifact storage gate
+
+- `P0R-001` の worker 実装を review gate に通し、head `9045c8fd6aef5b41d29386e5514310c77f12f100` を local `PR_READY` として記録。
+- local MinIO smoke CLI、S3 互換 PUT / HEAD metadata verification、RDB `raw_artifacts` payload 照合、`minio-init` one-shot contract、README / local infrastructure docs を追加した。
+- review 指摘に従い、外部 S3 endpoint / AWS credential fallback を PUT 前に拒否し、PUT 後の `head_object` unavailable を `skipped` ではなく failure として扱うようにした。
+- verification は `uv run pytest -q` 54 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。外部 endpoint guard は PUT 前の `status: failed` を確認した。
+- live MinIO PUT / HEAD は sandbox では未実行のため、`.env.local` と Docker Compose による手動 smoke は local 環境依存として残る。`P0R-002` の blocker を解除し、次の実行可能 issue とした。
