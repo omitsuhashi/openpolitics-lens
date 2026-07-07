@@ -227,3 +227,12 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 初回レビューで coverage ledger の source identity 不足、`blocked_by_terms` 判定の registry 依存、naive datetime round-trip の不安定性が指摘され、修正後レビューで Critical / Important / Minor なし。
 - verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 51 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
 - `G2PR-008` の review approval により `G2PR-009` を実行可能にした。G2PR-010 では同一 coverage key の重複 record の扱いを明示する。
+
+## [2026-07-07] implementation | G2PR-009 official event normalize contract
+
+- `G2PR-009` の worker 実装を review gate に通し、worker head `8bc2eaf94adf8bb014ac8d28967ba46ba452c552` を `PR_READY` として記録。
+- `OfficialPoliticalEventCandidate` / `EventSourceAssertion` を追加し、選挙・会議 event candidate を EvidenceItem に戻れる source assertion contract として表現した。
+- 複数 assertion、`date_mismatch` / `title_mismatch` / `status_mismatch`、EvidenceItem 必須 validation、VotePosition 非生成方針の regression test を追加した。
+- 初回レビューで conflict state と top-level event 値の整合性不足が指摘され、修正 cycle で `scheduled_date` / `title` / `event_status` の assertion 値と mismatch state の validation を追加した。修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 63 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- `G2PR-009` の review approval により `G2PR-010` を実行可能にした。
