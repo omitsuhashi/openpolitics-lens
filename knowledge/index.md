@@ -25,6 +25,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 - [Phase 0 P0R-006 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-006-execution-handoff.md) — 選挙公報・選挙結果 probe の Execution Plan Gate artifact と実行境界。
 - [Phase 0 P0R-007 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-007-execution-handoff.md) — 政治資金収支報告書 probe の Execution Plan Gate artifact と実行境界。
 - [Phase 0 P0R-008 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-008-execution-handoff.md) — 財務局・電子調達 契約/予算 probe の Execution Plan Gate artifact と実行境界。
+- [Phase 0 P0R-009 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-009-execution-handoff.md) — 助成・補助金 `SubsidyProgramCandidate` probe の Execution Plan Gate artifact と実行境界。
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の契約・入札、予算・決算、監査、政治資金、会議録・議案 connector 設計。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
 - [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source family の追加確認。
@@ -99,6 +100,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: Phase 0, P0R-007, execution packet, execution envelope, political fund report, PoliticalGroup, FinanceReport, PDF OCR risk, FundingContact guard, 実行計画, ハンドオフ
 - [Phase 0 P0R-008 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-008-execution-handoff.md) — `P0R-008` 財務局・電子調達 契約/予算 probe の input packet / execution envelope への入口。
   検索語: Phase 0, P0R-008, execution packet, execution envelope, procurement, budget, settlement, ContractAward, BudgetLine, PublicMoneyFlow guard, 実行計画, ハンドオフ
+- [Phase 0 P0R-009 Execution Handoff](wiki/syntheses/phase0-remainder-p0r-009-execution-handoff.md) — `P0R-009` 助成・補助金 `SubsidyProgramCandidate` probe の input packet / execution envelope への入口。
+  検索語: Phase 0, P0R-009, execution packet, execution envelope, tokyo_metro_grants, SubsidyProgramCandidate, subsidy_program_candidate_observed, PublicMoneyFlow guard, 実行計画, ハンドオフ
 - [Tokyo Subsidy PDF/OCR Feasibility](wiki/syntheses/tokyo-subsidy-pdf-ocr-feasibility.md) — PDF/OCR と表抽出の source family 別 feasibility、confidence、parse warning 方針。
   検索語: PDF, OCR, table extraction, confidence, parse warning, source family, G2PR-006, 表抽出, OCR方針
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の後続 source family connector registry と fixture / live acquisition 分離方針。

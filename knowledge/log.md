@@ -339,3 +339,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `budget_document_metadata_observed`、`budget_table_cell_observed`、`procurement_search_row_observed` を生成し、amount unit、税込・税抜、vendor 名寄せ、契約案との突合は warning / metadata / non-goal guard として扱う。
 - verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - fixture-only のため、実際の東京都予算・決算・電子調達 source parsing は未検証。`normalize/normalizer.py` の sibling source probe との統合は後続 integration work item で扱う。
+
+## [2026-07-07] execution-plan | Approve P0R-009 subsidy program packet
+
+- `phase0-remainder-p0r-009-input-packet.json`、`phase0-remainder-p0r-009-execution-envelope.json`、`phase0-remainder-p0r-009-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-008` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-009` branch をそこから作る方針にした。
+- 実行対象は `tokyo_metro_grants` の `SubsidyProgramCandidate` fixture-only probe に限定し、live source 取得、個別交付先、金額、成果、PublicMoneyFlow / SpendingReviewSignal 生成、後続 source probe は非対象に残した。
