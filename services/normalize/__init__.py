@@ -34,7 +34,9 @@ from normalize.normalizer import (
     normalize_assembly_records_search_snapshot,
     normalize_audit_report_fixture,
     normalize_grant_program_page,
+    normalize_p0r008_procurement_budget_fixture,
     normalize_tokyo_election_candidate_observation,
+    p0r008_procurement_budget_non_goal_guard,
 )
 
 __all__ = [
@@ -69,7 +71,9 @@ __all__ = [
     "normalize_assembly_records_search_snapshot",
     "normalize_audit_report_fixture",
     "normalize_grant_program_page",
+    "normalize_p0r008_procurement_budget_fixture",
     "normalize_tokyo_election_candidate_observation",
+    "p0r008_procurement_budget_non_goal_guard",
     "validate_audit_finding_no_app_classification",
     "validate_tokyo_election_claims_do_not_merge_entities",
 ]
