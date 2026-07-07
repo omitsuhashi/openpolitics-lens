@@ -219,3 +219,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 ## [2026-07-07] execution-plan | Update official political events envelope base
 
 - packet/evidence boundary commit `c870f7a1e485d62fb413c59084bb2d7cfd61640e` を `epic_base.sha` として execution envelope revision 1 に反映。
+
+## [2026-07-07] implementation | G2PR-008 source registry coverage ledger
+
+- `G2PR-008` の worker 実装を review gate に通し、worker head `0e999ad6ae539d6a944aa3b674907797da57b5da` を `PR_READY` として記録。
+- `SourceRegistryRecord` / `SourceCoverageRecord`、`officiality_level`、`coverage_status`、coverage identity key、required coverage guard、connector execution target helper、timezone-aware datetime validation を追加。
+- 初回レビューで coverage ledger の source identity 不足、`blocked_by_terms` 判定の registry 依存、naive datetime round-trip の不安定性が指摘され、修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 51 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- `G2PR-008` の review approval により `G2PR-009` を実行可能にした。G2PR-010 では同一 coverage key の重複 record の扱いを明示する。

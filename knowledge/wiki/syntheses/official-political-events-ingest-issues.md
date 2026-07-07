@@ -19,8 +19,8 @@ spec: official-political-events-ingest-spec.md
 
 | Epic ID | ローカルID | タイトル | レビュー状態 | 実行状態 | ブロック元 | ブロック先 | GitHub Issue | 実装レビュー | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-008 | Source Registry と Coverage Ledger の contract を作る | 承認済み | 実行可能 | なし | G2PR-009, G2PR-010, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 未実施 | 未作成 |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-009 | OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る | 承認済み | ブロック中 | G2PR-008 | G2PR-010, G2PR-011, G2PR-012, G2PR-013, G2PR-014, G2PR-015, G2PR-016 | 未作成 | 未実施 | 未作成 |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-008 | Source Registry と Coverage Ledger の contract を作る | 承認済み | PR_READY | なし | G2PR-009, G2PR-010, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | 未作成 |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-009 | OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る | 承認済み | 実行可能 | G2PR-008 | G2PR-010, G2PR-011, G2PR-012, G2PR-013, G2PR-014, G2PR-015, G2PR-016 | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-010 | 選挙・会議の coverage guard と欠落可視化を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | G2PR-015, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-011 | 国会会議録 API connector の fixture ingest を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-012 | 衆議院・参議院 schedule connector の fixture ingest を設計・実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
@@ -50,7 +50,7 @@ G2PR-008
   -> G2PR-018
 ```
 
-cycle はない。Issue Gate 承認後、`G2PR-008` だけが直ちに実行可能で、`G2PR-009` 以降は依存 issue の完了後に実行可能になる。
+cycle はない。`G2PR-008` は実装レビュー承認済みで `PR_READY`。現在は `G2PR-009` が実行可能で、`G2PR-010` 以降は依存 issue の完了後に実行可能になる。
 
 ## 初回 PR 実装範囲案
 
@@ -89,6 +89,17 @@ uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
 ```
+
+### 実装結果
+
+- branch: `codex/opl-official-political-events-20260707/G2PR-008-source-registry-coverage-ledger`
+- base: `c870f7a1e485d62fb413c59084bb2d7cfd61640e`
+- head: `0e999ad6ae539d6a944aa3b674907797da57b5da`
+- review range: `c870f7a1e485d62fb413c59084bb2d7cfd61640e..0e999ad6ae539d6a944aa3b674907797da57b5da`
+- 実装レビュー: 承認済み。初回レビューで coverage ledger の source identity 不足、`blocked_by_terms` 判定の registry 依存、naive datetime round-trip の不安定性が指摘され、修正後レビューで Critical / Important / Minor なし。
+- 実装内容: `SourceRegistryRecord` / `SourceCoverageRecord`、`officiality_level`、`coverage_status`、coverage identity key、required coverage guard、connector execution target helper、timezone-aware datetime validation を追加した。
+- verification: `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` は 51 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` は passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: G2PR-010 側で同一 coverage key の重複 record の扱いを明示する必要があるが、G2PR-008 の completion blocker ではない。
 
 ## G2PR-009: OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る
 
