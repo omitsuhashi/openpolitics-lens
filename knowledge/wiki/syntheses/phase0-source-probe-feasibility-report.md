@@ -51,13 +51,6 @@ Phase 0 判定: `complete`
 | tokyo_metro_grants | PublicMoneyFlow は生成しない / 個別交付先、金額、成果は生成しない |
 | tokyo_audit_reports | AuditFindingCandidate は公式文言を保持し、アプリ側評価語を混ぜない / public SpendingReviewSignal、score、ranking は生成しない |
 
-## 関連ページ
-
-- [Phase 0 残実装設計](phase0-remainder-implementation-design.md) — Phase 0 gate と source family coverage contract の設計。
-- [Phase 0 残実装ローカル issue ledger](phase0-remainder-issues.md) — `P0R-001` から `P0R-012` の実装状態と review gate。
-- [Roadmap](../../roadmap.md) — Phase 0 gate の上位ロードマップ。
-- [Local Infrastructure](../../local-infrastructure.md) — RawArtifact 保存と local MinIO 起動契約。
-
 ## 出典
 
 - [Phase 0 残実装設計](phase0-remainder-implementation-design.md)
