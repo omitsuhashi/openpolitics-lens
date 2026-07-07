@@ -1,11 +1,13 @@
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
 from ingest.filesystem import FileSystemOutputWriter
+from ingest.storage_smoke import StorageSmokeError, run_storage_smoke
 from ingest.tokyo_metro_grants import FakeTokyoMetroGrantsFetcher, TokyoMetroGrantsConnector
 
 
@@ -54,7 +56,63 @@ def _build_parser() -> argparse.ArgumentParser:
         help="future live-run rehearsal mode; no durable write beyond planned temp output",
     )
     run.set_defaults(handler=_run_tokyo_metro_grants_run)
+
+    storage_smoke = subcommands.add_parser(
+        "storage-smoke",
+        help="put one RawArtifact to local MinIO and verify metadata plus DB payload",
+    )
+    storage_smoke.add_argument(
+        "--bucket",
+        default=_env_default("S3_BUCKET", default="openpolitics-raw"),
+        help="S3-compatible bucket name; defaults to S3_BUCKET or openpolitics-raw",
+    )
+    storage_smoke.add_argument(
+        "--endpoint",
+        default=_env_default("S3_ENDPOINT", default="http://localhost:9000"),
+        help=(
+            "local MinIO endpoint; defaults to S3_ENDPOINT or http://localhost:9000. "
+            "External endpoints are rejected before PUT."
+        ),
+    )
+    storage_smoke.add_argument(
+        "--access-key",
+        default=_env_default("MINIO_ROOT_USER", default="openpolitics"),
+        help="S3 access key; defaults to local development credentials",
+    )
+    storage_smoke.add_argument(
+        "--secret-key",
+        default=_env_default(
+            "MINIO_ROOT_PASSWORD",
+            default="openpolitics_minio_dev_password",
+        ),
+        help="S3 secret key; defaults to local development credentials",
+    )
+    storage_smoke.add_argument(
+        "--region",
+        default=_env_default("S3_REGION", default="ap-northeast-1"),
+        help="S3 signing region; defaults to S3_REGION or ap-northeast-1",
+    )
+    storage_smoke.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=2.0,
+        help="HTTP timeout for local MinIO requests",
+    )
+    storage_smoke.add_argument(
+        "--require-available",
+        action="store_true",
+        help="return non-zero when MinIO is not reachable instead of reporting skipped",
+    )
+    storage_smoke.set_defaults(handler=_run_storage_smoke)
     return parser
+
+
+def _env_default(*names: str, default: str) -> str:
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return default
 
 
 def _add_tokyo_metro_grants_common_args(parser: argparse.ArgumentParser) -> None:
@@ -138,6 +196,37 @@ def _run_tokyo_metro_grants_run(args: argparse.Namespace) -> int:
         file=sys.stderr,
     )
     return 2
+
+
+def _run_storage_smoke(args: argparse.Namespace) -> int:
+    try:
+        result = run_storage_smoke(
+            bucket=args.bucket,
+            endpoint=args.endpoint,
+            access_key=args.access_key,
+            secret_key=args.secret_key,
+            region=args.region,
+            timeout_seconds=args.timeout_seconds,
+            skip_if_unavailable=not args.require_available,
+        )
+    except StorageSmokeError as exc:
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "bucket": args.bucket,
+                    "endpoint": args.endpoint,
+                    "reason": str(exc),
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    print(json.dumps(result.to_json_dict(), ensure_ascii=False, sort_keys=True))
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:

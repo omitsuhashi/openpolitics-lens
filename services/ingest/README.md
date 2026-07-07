@@ -71,6 +71,23 @@ uv run python -m ingest tokyo-metro-grants run \
 
 live fetch 実装前の `run` は status 2 で終了し、network request を行わない。
 
+RawArtifact storage smoke は local MinIO が使える環境だけで手動実行する。通常
+test / CI には含めない。
+
+```bash
+cd ..
+docker compose --env-file .env.local up -d minio minio-init
+cd services
+uv run python -m ingest storage-smoke \
+  --bucket openpolitics-raw \
+  --endpoint http://localhost:9000
+```
+
+この command は 1 artifact の put、object metadata、RDB `raw_artifacts` payload
+を照合する。Docker / MinIO が未起動の場合は `status: skipped` を返す。
+endpoint は local MinIO 専用で、`localhost`、loopback IP、Compose service 名
+`minio` 以外は PUT 前に拒否する。`--require-available` を付けると未起動も失敗として扱う。
+
 ## Output Layout
 
 上の command は `services/ingest/out/` に生成物を書く。

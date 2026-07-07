@@ -101,6 +101,24 @@ def test_tokyo_metro_grants_help_lists_fixture_and_run_without_live_flag() -> No
     assert "--live" not in result.stdout
 
 
+def test_ingest_help_lists_storage_smoke_command() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "--help",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "storage-smoke" in result.stdout
+
+
 def test_tokyo_metro_grants_run_is_reserved_for_future_live_ingest(
     tmp_path: Path,
 ) -> None:

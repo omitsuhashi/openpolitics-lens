@@ -13,6 +13,13 @@ from ingest.object_storage import (
     ObjectStorageWrite,
 )
 from ingest.persistence import FetchManifestDbRows, build_fetch_manifest_db_rows
+from ingest.storage_smoke import (
+    S3CompatibleObjectStorageClient,
+    StorageSmokeError,
+    StorageSmokeResult,
+    StorageUnavailable,
+    run_storage_smoke,
+)
 from ingest.tokyo_metro_grants import (
     TOKYO_METRO_GRANTS_CONFIG,
     TOKYO_METRO_GRANTS_CONNECTOR,
@@ -35,12 +42,17 @@ __all__ = [
     "ObjectStorageOutputWriter",
     "ObjectStorageWrite",
     "RawArtifactWrite",
+    "S3CompatibleObjectStorageClient",
     "SourceDocumentCandidate",
     "SourceFamily",
+    "StorageSmokeError",
+    "StorageSmokeResult",
+    "StorageUnavailable",
     "TOKYO_METRO_GRANTS_CONFIG",
     "TOKYO_METRO_GRANTS_CONNECTOR",
     "TokyoMetroGrantsConfig",
     "TokyoMetroGrantsConnector",
     "build_fetch_manifest_db_rows",
     "content_sha256",
+    "run_storage_smoke",
 ]
