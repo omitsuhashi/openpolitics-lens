@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/4f07/openpolitics-lens",
+  "epic_id": "opl-phase0-remainder-20260707",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/phase0-remainder-implementation-design.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:ca3d19eaf005fa52ac942b181759aa120b1b96835cc59de5b14bafb4ff9914a9"
+  },
+  "work_items": [
+    {
+      "id": "P0R-001",
+      "title": "RawArtifact storage gate を確定する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": ["P0R-001 は local PR_READY 済み"],
+      "verification": ["P0R-001 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/tests", "path:packages/db"],
+      "dependencies": []
+    },
+    {
+      "id": "P0R-002",
+      "title": "Evidence schema / warning / claim catalog を拡張する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": ["P0R-002 は local PR_READY 済み"],
+      "verification": ["P0R-002 review approved"],
+      "write_scope": ["path:services/normalize", "path:services/tests", "path:packages/db"],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    {
+      "id": "P0R-003",
+      "title": "Phase 0 source registry / fixture harness を作る",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": ["P0R-003 は local PR_READY 済み"],
+      "verification": ["P0R-003 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "none"
+        },
+        {
+          "issue": "P0R-002",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    {
+      "id": "P0R-004",
+      "title": "都議会 会議録・速記録 probe を実装する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"
+      },
+      "acceptance_criteria": [
+        "会議録検索 snapshot fixture、検索条件 metadata、meeting / speaker / speech block locator が fixture-only で使える",
+        "10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を生成できる",
+        "speech text の直接観測 claim は作れるが、政策 stance や意味分類は生成しない",
+        "browser automation / live search は通常 test に入らない",
+        "EvidenceItem から raw artifact と search snapshot 条件へ戻れる"
+      ],
+      "non_goals": [
+        "live search、browser automation、external network は実行しない",
+        "政策 stance、意味分類、議員評価、PublicMoneyFlow、SpendingReviewSignal は生成しない",
+        "P0R-005 以降の source probe は実装しない",
+        "remote write、GitHub Issue mirror、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/normalize",
+        "path:services/tests"
+      ],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    }
+  ],
+  "delivery_intent": "local_only"
+}

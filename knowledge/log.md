@@ -268,3 +268,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `ingest.__all__` から registry / fixture harness を export し、`P0R-004` から `P0R-010` が同じ registry / harness を参照できるようにした。
 - verification は `uv run pytest -q` 65 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - individual source probe fixture / parser は未実装のまま残し、`P0R-004` から `P0R-010` の blocker を解除して実行可能 issue とした。
+
+## [2026-07-07] execution-plan | Approve P0R-004 assembly records packet
+
+- `phase0-remainder-p0r-004-input-packet.json`、`phase0-remainder-p0r-004-execution-envelope.json`、`phase0-remainder-p0r-004-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001`、`P0R-002`、`P0R-003` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-004` branch をそこから作る方針にした。
+- 実行対象は都議会 会議録・速記録 probe の fixture-only 実装に限定し、live search、browser automation、政策 stance / 意味分類、後続 source probe は非対象に残した。
