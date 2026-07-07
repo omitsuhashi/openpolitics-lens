@@ -208,3 +208,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Issue Gate を承認済みに更新。
 - `G2PR-008` から `G2PR-010` を初回 PR 実装範囲、`G2PR-011` から `G2PR-018` を後続 issue として承認。
 - `G2PR-008` のみを直ちに実行可能とし、`G2PR-009` 以降は blocker graph に従って実行する。
+
+## [2026-07-07] execution-plan | Draft official political events packet
+
+- `official-political-events-ingest-input-packet.json`, `official-political-events-ingest-execution-envelope.json`, `official-political-events-ingest-execution-handoff.md` を追加。
+- 実行対象を `G2PR-008` から `G2PR-010` に限定し、execution envelope は `schema_version` 3、`local_only` とした。
+- `phase_branch_policy` を追加し、planning artifacts、epic base、issue branches、worker worktrees の ownership を分離。
+- input packet、execution envelope、capability preflight、git reservation reconcile が通過。
