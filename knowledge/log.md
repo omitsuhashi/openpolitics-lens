@@ -353,3 +353,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 10 RawArtifact / SourceDocumentCandidate、10 EvidenceItem、candidate evidence trace を扱い、個別交付先、金額、成果、`PublicMoneyFlow` を claim に昇格しない guard を追加した。
 - verification は `uv run pytest -q` 66 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important なし、Minor 1 件は非 blocking として受容。
 - fixture-only のため、live Tokyo grants retrieval と production HTML variance は未検証。candidate EvidenceItem の一意性は `source_document_id` を含む stable id により間接的に担保しており、直接の uniqueness assertion はない。
+
+## [2026-07-07] execution-plan | Approve P0R-010 audit finding packet
+
+- `phase0-remainder-p0r-010-input-packet.json`、`phase0-remainder-p0r-010-execution-envelope.json`、`phase0-remainder-p0r-010-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-009` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-010` branch をそこから作る方針にした。
+- 実行対象は監査 source / `AuditFindingCandidate` fixture-only probe に限定し、live source 取得、監査指摘の評価分類、SpendingReviewSignal / PublicMoneyFlow 生成、後続 storage separation contract は非対象に残した。

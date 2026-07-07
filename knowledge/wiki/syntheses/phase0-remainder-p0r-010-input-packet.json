@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/4f07/openpolitics-lens",
+  "epic_id": "opl-phase0-remainder-20260707",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/phase0-remainder-implementation-design.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:ca3d19eaf005fa52ac942b181759aa120b1b96835cc59de5b14bafb4ff9914a9"
+  },
+  "work_items": [
+    {
+      "id": "P0R-001",
+      "title": "RawArtifact storage gate を確定する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-001 は local PR_READY 済み"],
+      "verification": ["P0R-001 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/tests", "path:packages/db"],
+      "dependencies": []
+    },
+    {
+      "id": "P0R-002",
+      "title": "Evidence schema / warning / claim catalog を拡張する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-002 は local PR_READY 済み"],
+      "verification": ["P0R-002 review approved"],
+      "write_scope": ["path:services/normalize", "path:services/tests", "path:packages/db"],
+      "dependencies": [
+        {"issue": "P0R-001", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}
+      ]
+    },
+    {
+      "id": "P0R-003",
+      "title": "Phase 0 source registry / fixture harness を作る",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-003 は local PR_READY 済み"],
+      "verification": ["P0R-003 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {"issue": "P0R-001", "strength": "hard", "release_on": "review_approved", "base_effect": "none"},
+        {"issue": "P0R-002", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}
+      ]
+    },
+    {
+      "id": "P0R-004",
+      "title": "都議会 会議録・速記録 probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-004 は local PR_READY 済み"],
+      "verification": ["P0R-004 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-005",
+      "title": "都議会 提出議案・議決結果 probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-005 は local PR_READY 済み"],
+      "verification": ["P0R-005 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-006",
+      "title": "選挙公報・選挙結果 probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-006 は local PR_READY 済み"],
+      "verification": ["P0R-006 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-007",
+      "title": "政治資金収支報告書 probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-007 は local PR_READY 済み"],
+      "verification": ["P0R-007 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-008",
+      "title": "財務局・電子調達 契約/予算 probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-008 は local PR_READY 済み"],
+      "verification": ["P0R-008 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-009",
+      "title": "助成・補助金 SubsidyProgramCandidate probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": ["P0R-009 は local PR_READY 済み"],
+      "verification": ["P0R-009 review approved"],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [{"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}]
+    },
+    {
+      "id": "P0R-010",
+      "title": "監査 source / AuditFindingCandidate probe を実装する",
+      "source": {"type": "local", "path": "knowledge/wiki/syntheses/phase0-remainder-issues.md"},
+      "acceptance_criteria": [
+        "監査 report index / report fixture を追加する",
+        "財政援助団体等監査、包括外部監査、措置状況を source type で分ける",
+        "指摘本文、対象団体、年度、措置状況を official wording のまま locator 付きで保存する",
+        "10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を fixture-only で生成できる",
+        "AuditFindingCandidate 5 件以上を evidence trace 付きで作れる",
+        "監査指摘を無駄遣い、不正、違法と分類しない guard がある"
+      ],
+      "non_goals": [
+        "live source 取得、browser automation、external network、PDF download、OCR 実行は行わない",
+        "監査指摘を無駄遣い、不正、違法、政治的評価、アプリ計算 signal として分類しない",
+        "SpendingReviewSignal、PublicMoneyFlow、BudgetLine、ContractAward を生成しない",
+        "P0R-004 から P0R-009、P0R-011 以降の source probe / storage separation contract は実装しない",
+        "remote write、GitHub Issue mirror、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {"issue": "P0R-003", "strength": "hard", "release_on": "review_approved", "base_effect": "branch_from_blocker_head"}
+      ]
+    }
+  ],
+  "delivery_intent": "local_only"
+}
