@@ -212,3 +212,16 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `OPL-PHASE0-REMAINDER-20260707` の Spec Gate を承認済みに更新。
 - 承認範囲は common contract first、fixture-only verification、source family 横断 sample coverage、S3 互換 RawArtifact storage gate、`.env.local` + local MinIO smoke、candidate-first の `SubsidyProgram` / `AuditFinding`、監査指摘と app-calculated signal candidate の保存分離。
 - リモート方針は `local_only` のまま維持し、GitHub mirror / PR / live acquisition は別 gate に残す。
+
+## [2026-07-07] issue-gate | Draft Phase 0 remainder local issue ledger
+
+- `wiki/syntheses/phase0-remainder-issues.md` を追加し、`OPL-PHASE0-REMAINDER-20260707` の local issue ledger draft を作成。
+- `P0R-001` から `P0R-012` を RawArtifact storage、Evidence schema、source registry、Roadmap 対象 source 7 系統、監査 signal 分離、coverage report に分解した。
+- `P0R-001` だけを `実行可能` とし、`P0R-002` 以降は blocker graph に従って `ブロック中` にした。
+- `index.md` に Phase 0 remainder issues の discovery entry を追加した。
+
+## [2026-07-07] gate | Approve Phase 0 remainder local issues
+
+- `OPL-PHASE0-REMAINDER-20260707` の Issue Gate を承認済みに更新。
+- `P0R-001` から `P0R-012` の local issue ledger、blocker graph、依存順、実行可能 / ブロック中 status、acceptance criteria を承認済みとした。
+- `P0R-001` だけを初期実行可能 issue とし、GitHub Issue mirror / PR / live acquisition は別 gate に残した。

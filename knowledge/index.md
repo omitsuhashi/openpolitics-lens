@@ -16,6 +16,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
 - [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都補助金・助成金 first の ingest 初期仕様と後続 issue 方針。
 - [Phase 0 Remainder Implementation Design](wiki/syntheses/phase0-remainder-implementation-design.md) — Phase 0 残実装の承認済み Spec Gate、source family 横断 sample coverage、warning / locator contract 設計。
+- [Phase 0 Remainder Issues](wiki/syntheses/phase0-remainder-issues.md) — Phase 0 残実装の承認済み local issue ledger、blocker graph、Issue Gate 承認内容。
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の契約・入札、予算・決算、監査、政治資金、会議録・議案 connector 設計。
 - [Official Data Source Check](wiki/sources/2026-07-03-official-data-source-check.md) — 2026-07-03 時点で確認した公式ページの要点。
 - [Tokyo Data Source Inventory](wiki/sources/2026-07-05-tokyo-data-source-inventory.md) — 東京都 source family の追加確認。
@@ -72,6 +73,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: ingest, issue ledger, blocker graph, G2PR, subsidy, grants, jurisdiction, イシュー, 実装計画, 補助金, 助成金
 - [Phase 0 Remainder Implementation Design](wiki/syntheses/phase0-remainder-implementation-design.md) — Phase 0 残実装の承認済み Spec Gate と source family 横断 sample / EvidenceItem / warning contract 設計。
   検索語: Phase 0, source probe, sample artifact, EvidenceItem, parse warning, locator, OPL-PHASE0-REMAINDER-20260707, 残実装, 実装設計
+- [Phase 0 Remainder Issues](wiki/syntheses/phase0-remainder-issues.md) — Phase 0 残実装の承認済み local issue ledger と blocker graph。
+  検索語: Phase 0, issue ledger, blocker graph, P0R, sample artifact, EvidenceItem, RawArtifact, MinIO, 残実装, 実装計画
 - [Tokyo Subsidy PDF/OCR Feasibility](wiki/syntheses/tokyo-subsidy-pdf-ocr-feasibility.md) — PDF/OCR と表抽出の source family 別 feasibility、confidence、parse warning 方針。
   検索語: PDF, OCR, table extraction, confidence, parse warning, source family, G2PR-006, 表抽出, OCR方針
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の後続 source family connector registry と fixture / live acquisition 分離方針。
