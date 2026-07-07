@@ -345,3 +345,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-009-input-packet.json`、`phase0-remainder-p0r-009-execution-envelope.json`、`phase0-remainder-p0r-009-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-008` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-009` branch をそこから作る方針にした。
 - 実行対象は `tokyo_metro_grants` の `SubsidyProgramCandidate` fixture-only probe に限定し、live source 取得、個別交付先、金額、成果、PublicMoneyFlow / SpendingReviewSignal 生成、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-009 subsidy program candidates probe
+
+- `P0R-009` の worker 実装を review gate に通し、head `de1c9bce6d4312995c74e48213134a58949092a8` を local `PR_READY` として記録。
+- `tokyo_metro_grants` fixture HTML を 10 candidate に拡張し、`subsidy_program_candidate_observed` で locator が安定する field のみを `SubsidyProgramCandidate` candidate claim にした。
+- 10 RawArtifact / SourceDocumentCandidate、10 EvidenceItem、candidate evidence trace を扱い、個別交付先、金額、成果、`PublicMoneyFlow` を claim に昇格しない guard を追加した。
+- verification は `uv run pytest -q` 66 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important なし、Minor 1 件は非 blocking として受容。
+- fixture-only のため、live Tokyo grants retrieval と production HTML variance は未検証。candidate EvidenceItem の一意性は `source_document_id` を含む stable id により間接的に担保しており、直接の uniqueness assertion はない。

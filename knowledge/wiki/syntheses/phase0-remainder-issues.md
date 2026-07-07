@@ -14,7 +14,7 @@ spec_gate_commit: 90a2e00
 
 `OPL-PHASE0-REMAINDER-20260707` では、Roadmap の Phase 0 gate を満たすため、まず RawArtifact / Evidence / source registry の共通 contract を固め、その後 Roadmap 対象 source 7 系統の fixture-first probe を実装する。
 
-`P0R-001` から `P0R-008` は実装レビュー承認済みで local `PR_READY` になった。`P0R-009` と `P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
+`P0R-001` から `P0R-009` は実装レビュー承認済みで local `PR_READY` になった。`P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
 
 ## Ledger
 
@@ -28,7 +28,7 @@ spec_gate_commit: 90a2e00
 | OPL-PHASE0-REMAINDER-20260707 | P0R-006 | 選挙公報・選挙結果 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-007 | 政治資金収支報告書 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-008 | 財務局・電子調達 契約/予算 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-009 | 助成・補助金 `SubsidyProgramCandidate` probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-009 | 助成・補助金 `SubsidyProgramCandidate` probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-010 | 監査 source / `AuditFindingCandidate` probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-011, P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-011 | 監査指摘とアプリ計算 signal の保存分離 contract を作る | 承認済み | ブロック中 | P0R-010 | P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-012 | Phase 0 feasibility report / coverage CLI を作る | 承認済み | ブロック中 | P0R-004, P0R-005, P0R-006, P0R-007, P0R-008, P0R-009, P0R-010, P0R-011 | なし | 未作成 | 未実施 | 未作成 |
@@ -48,7 +48,7 @@ P0R-003 -> P0R-010 -> P0R-011 -> P0R-012
 P0R-010 -> P0R-012
 ```
 
-cycle はない。`P0R-001` から `P0R-008` は local `PR_READY` になったため、`P0R-009` と `P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
+cycle はない。`P0R-001` から `P0R-009` は local `PR_READY` になったため、`P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
 
 ## P0R-001: RawArtifact storage gate を確定する
 
@@ -351,6 +351,18 @@ PublicMoneyFlow の前段として、予算・決算 document と電子調達 se
 - 10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を fixture-only で生成する。
 - `SubsidyProgramCandidate` 10 件以上を evidence trace 付きで作れる。
 - 個別交付先、金額、成果、`PublicMoneyFlow` は生成しない guard がある。
+
+### 実装結果
+
+- branch: `codex/opl-phase0-remainder-20260707/P0R-009-subsidy-program-candidates-probe`
+- base: `7fb7c999aa4f67410379da2fa25a0cf248de2975`
+- head: `de1c9bce6d4312995c74e48213134a58949092a8`
+- review range: `7fb7c999aa4f67410379da2fa25a0cf248de2975..de1c9bce6d4312995c74e48213134a58949092a8`
+- 実装レビュー: 承認済み。独立レビューで Critical / Important なし、Minor 1 件は非 blocking として受容。
+- 実装内容: `tokyo_metro_grants` fixture HTML を 10 candidate に拡張し、`subsidy_program_candidate_observed` で locator が安定する field のみを `SubsidyProgramCandidate` candidate claim にした。10 RawArtifact / SourceDocumentCandidate、10 EvidenceItem、candidate evidence trace を扱い、個別交付先、金額、成果、`PublicMoneyFlow` を claim に昇格しない guard を追加した。
+- verification: `uv run pytest -q` は 66 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: fixture-only のため、live Tokyo grants retrieval と production HTML variance は未検証。candidate EvidenceItem の一意性は `source_document_id` を含む stable id により間接的に担保しており、直接の uniqueness assertion はない。
+- blocker release: `P0R-012` はまだ `P0R-010` と `P0R-011` 待ち。次は `P0R-010` を実行可能 issue とする。
 
 ## P0R-010: 監査 source / `AuditFindingCandidate` probe を実装する
 
