@@ -195,3 +195,16 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Spec Gate を承認済みに更新。
 - 承認範囲は、選挙と会議を必須 coverage target とし、未対応 source、未確認 jurisdiction、検索 UI 依存、PDF 依存、取得失敗を黙って欠落させず `SourceCoverageRecord` に残す方針。
 - 「全国横断の単一 API」ではなく、source registry、coverage ledger、source family connector 群で漏れを可視化しながら取得対象を広げる設計を承認。
+
+## [2026-07-07] issue-gate | Draft official political events local issue ledger
+
+- `wiki/syntheses/official-political-events-ingest-issues.md` を追加し、`OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の local issue ledger draft を作成。
+- `G2PR-008` から `G2PR-010` を初回 PR 実装範囲案、`G2PR-011` から `G2PR-018` を後続 issue として記録。
+- 選挙と会議を必須 coverage target とし、source registry、coverage ledger、event assertion conflict、未取得 gap を silent omission しない blocker graph に分解。
+- `index.md` に local issue ledger の catalog entry を追加。
+
+## [2026-07-07] gate | Approve official political events local issues
+
+- `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Issue Gate を承認済みに更新。
+- `G2PR-008` から `G2PR-010` を初回 PR 実装範囲、`G2PR-011` から `G2PR-018` を後続 issue として承認。
+- `G2PR-008` のみを直ちに実行可能とし、`G2PR-009` 以降は blocker graph に従って実行する。
