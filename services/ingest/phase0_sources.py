@@ -344,9 +344,13 @@ def build_fixture_coverage_sample(
     source_document_candidate_count = sum(1 for _item in source_document_candidates)
     evidence_item_count = 0
     warning_count = 0
+    review_required_count = 0
     for evidence_item in evidence_items:
         evidence_item_count += 1
         warning_count += len(tuple(getattr(evidence_item, "parse_warnings", ())))
+        location_metadata = getattr(evidence_item, "location_metadata", {})
+        if isinstance(location_metadata, dict) and location_metadata.get("review_required"):
+            review_required_count += 1
 
     return FixtureCoverageSample(
         source_family=source_family,
@@ -354,6 +358,7 @@ def build_fixture_coverage_sample(
         source_document_candidate_count=source_document_candidate_count,
         evidence_item_count=evidence_item_count,
         warning_count=warning_count,
+        review_required_count=review_required_count,
     )
 
 
