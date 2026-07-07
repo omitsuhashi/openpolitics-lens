@@ -114,9 +114,13 @@ services/ingest/out/
 
 `services/ingest/out/` は生成物なので git 管理しない。
 
-### 5. live fetch は手動、テストは fixture/local のみ
+### 5. `run` と `fixture` を分け、テストは fixture/local のみ
 
-自動テストは fixture HTML と fake fetcher を使う。live fetch は `--live` のような明示 option を持つ手動検証に限定する。CI や通常 test で東京都サイトへ外部 request しない。
+自動テストは fixture HTML と fake fetcher を使う。CI や通常 test で東京都サイトへ外部 request しない。
+
+CLI は cron / daily ingest 用の `run` と、local deterministic verification 用の `fixture` を分ける。`--live` option は使わない。live fetch 実装後は `run` が通常実行 path になり、手動 rehearsal や保存抑制は `run --dry-run` のような dry-run option で扱う。
+
+初回実装では live fetch 自体は未実装であり、`run` は network request を行わず status 2 で終了する。
 
 ### 6. jurisdiction と source family を分離する
 
@@ -301,7 +305,7 @@ repo root:
 git diff --check
 ```
 
-live fetch は外部 network を使うため、通常 verification には含めない。実施する場合は、対象 URL、取得件数、保存先、rate limit policy を明示して手動で行う。
+live fetch は外部 network を使うため、通常 verification には含めない。実施する場合は、`run` の対象 URL、取得件数、保存先、rate limit policy、dry-run 有無を明示して手動で行う。
 
 ## リモート書き込み方針
 

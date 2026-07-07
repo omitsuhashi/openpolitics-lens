@@ -138,12 +138,14 @@ developer が `services/ingest` の fixture ingest を再現できる CLI と RE
 ### 実装範囲
 
 - fixture 入力と output directory を受け取る CLI を追加する。
-- live fetch は明示 option にし、通常 command と test では使わない。
+- cron / daily ingest 用の `run` と、local deterministic verification 用の `fixture` を分ける。
+- live fetch 実装前の `run` は network request を行わず終了する。`--live` option は使わない。
 - README に ingest/normalize 境界、Jurisdiction Profile、output layout、検証 command を書く。
 
 ### 受け入れ条件
 
-- CLI の fixture mode が local file だけで動く。
+- CLI の `fixture` command が local file だけで動く。
+- CLI に `--live` option が存在しない。
 - README の command が現在の package layout と一致する。
 - generated output は git 管理されない。
 
@@ -163,6 +165,7 @@ uv run ruff format --check .
 - head: `145ef85478362b4df279bc2f75e6b210ac091419`
 - review range: `d6c9cfca93a3bfb07c10117deba9d3ebe3bd62bd..145ef85478362b4df279bc2f75e6b210ac091419`
 - 実装レビュー: 承認済み。fixture CLI、`--live` guard、README の責務境界、Jurisdiction Profile、output layout、検証 command を確認した。
+- 2026-07-07 追記: `--live` option は廃止し、CLI を `tokyo-metro-grants fixture` と `tokyo-metro-grants run` に分けた。live fetch 実装前の `run` は network request を行わず status 2 で終了する。
 - verification: `uv run pytest -q` は 9 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
 
 ## G2PR-004: PostgreSQL / MinIO 永続化を設計・実装する

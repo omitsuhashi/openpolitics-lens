@@ -42,11 +42,17 @@ start_url: https://www.metro.tokyo.lg.jp/purpose/grant
 
 ## CLI
 
-fixture mode は local file だけで動く。通常の検証と test は外部 network を使わない。
+CLI は cron / daily ingest 用の `run` と、外部 network を使わない再現検証用の
+`fixture` を分ける。`--live` option は使わない。
+
+現時点では live fetch は未実装であり、`run` は network request を行わず終了する。
+live fetch 実装後は `run` を通常実行 path にし、手動 rehearsal は `--dry-run` で行う。
+
+fixture command は local file だけで動く。通常の検証と test は外部 network を使わない。
 
 ```bash
 cd services
-uv run python -m ingest tokyo-metro-grants \
+uv run python -m ingest tokyo-metro-grants fixture \
   --fixture-html tests/fixtures/tokyo_metro_grants_index.html \
   --output-dir ingest/out \
   --run-id fixture-20260705 \
@@ -54,7 +60,16 @@ uv run python -m ingest tokyo-metro-grants \
   --fetched-at 2026-07-05T09:01:00Z
 ```
 
-`--live` は将来の手動 live fetch 用の明示 opt-in。G2PR-003 の通常 path と test では使わない。現 CLI は `--live` 指定時に network request を行わず終了する。
+将来の daily ingest は次の形に寄せる。
+
+```bash
+cd services
+uv run python -m ingest tokyo-metro-grants run \
+  --output-dir ingest/out \
+  --run-id tokyo-grants-20260705
+```
+
+live fetch 実装前の `run` は status 2 で終了し、network request を行わない。
 
 ## Output Layout
 

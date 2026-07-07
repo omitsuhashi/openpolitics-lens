@@ -58,7 +58,7 @@ manifest record には `jurisdiction_id`、`jurisdiction_level`、`source_system
 | `connector_id` | `jp_tokyo.metro_grants.v1` |
 | discovery entrypoint | `https://www.metro.tokyo.lg.jp/purpose/grant` |
 | fetch entrypoint | discovered grant / subsidy candidate page |
-| `retrieval_method` | `static_html_index` + `html_detail`; live fetch は明示 option の手動検証 |
+| `retrieval_method` | `static_html_index` + `html_detail`; live fetch 実装後は `run`、local verification は `fixture` |
 | `candidate_type` | `grant_program_page_candidate` |
 | `source_type` | `grant_program_page` |
 | `normalization_target` | SourceDocument / EvidenceItem / EvidenceClaim。SubsidyProgram、PublicMoneyFlow、SpendingReviewSignal は後続 |

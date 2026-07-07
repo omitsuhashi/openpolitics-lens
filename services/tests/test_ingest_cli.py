@@ -15,6 +15,7 @@ def test_tokyo_metro_grants_fixture_cli_writes_manifests_and_raw_artifact(
             "-m",
             "ingest",
             "tokyo-metro-grants",
+            "fixture",
             "--fixture-html",
             str(FIXTURE_PATH),
             "--output-dir",
@@ -54,3 +55,72 @@ def test_tokyo_metro_grants_fixture_cli_writes_manifests_and_raw_artifact(
     assert raw_path.read_bytes() == FIXTURE_PATH.read_bytes()
     assert raw_path.parts[-6:-3] == ("raw", "jp-tokyo", "tokyo_metro_grants")
     assert all(record["source_document_candidate"] for record in fetched)
+
+
+def test_tokyo_metro_grants_cli_rejects_removed_live_flag(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "tokyo-metro-grants",
+            "--live",
+            "--output-dir",
+            str(tmp_path),
+            "--run-id",
+            "removed-live-run",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "--live" not in result.stdout
+
+
+def test_tokyo_metro_grants_help_lists_fixture_and_run_without_live_flag() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "tokyo-metro-grants",
+            "--help",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "fixture" in result.stdout
+    assert "run" in result.stdout
+    assert "--live" not in result.stdout
+
+
+def test_tokyo_metro_grants_run_is_reserved_for_future_live_ingest(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "tokyo-metro-grants",
+            "run",
+            "--output-dir",
+            str(tmp_path),
+            "--run-id",
+            "daily-run",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "live ingest is not implemented yet" in result.stderr

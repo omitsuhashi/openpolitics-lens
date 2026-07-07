@@ -25,55 +25,64 @@ def _build_parser() -> argparse.ArgumentParser:
         "tokyo-metro-grants",
         help="run Tokyo Metropolitan Government grants ingest",
     )
-    tokyo_grants.add_argument(
+    tokyo_grants_subcommands = tokyo_grants.add_subparsers(
+        dest="tokyo_metro_grants_command",
+        required=True,
+    )
+
+    fixture = tokyo_grants_subcommands.add_parser(
+        "fixture",
+        help="run deterministic fixture ingest without external network",
+    )
+    fixture.add_argument(
         "--fixture-html",
         type=Path,
+        required=True,
         help="local HTML fixture used for discovery and fake fetch content",
     )
-    tokyo_grants.add_argument(
+    _add_tokyo_metro_grants_common_args(fixture)
+    fixture.set_defaults(handler=_run_tokyo_metro_grants_fixture)
+
+    run = tokyo_grants_subcommands.add_parser(
+        "run",
+        help="run daily live ingest once connector live fetching is implemented",
+    )
+    _add_tokyo_metro_grants_common_args(run)
+    run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="future live-run rehearsal mode; no durable write beyond planned temp output",
+    )
+    run.set_defaults(handler=_run_tokyo_metro_grants_run)
+    return parser
+
+
+def _add_tokyo_metro_grants_common_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
         "--output-dir",
         type=Path,
         required=True,
         help="directory where manifests/ and raw/ output are written",
     )
-    tokyo_grants.add_argument("--run-id", required=True, help="manifest run id path component")
-    tokyo_grants.add_argument(
+    parser.add_argument("--run-id", required=True, help="manifest run id path component")
+    parser.add_argument(
         "--discovered-at",
         default=None,
         help="ISO-8601 timestamp for discovery records; defaults to current UTC time",
     )
-    tokyo_grants.add_argument(
+    parser.add_argument(
         "--fetched-at",
         default=None,
         help="ISO-8601 timestamp for fetch records; defaults to discovered-at",
     )
-    tokyo_grants.add_argument(
+    parser.add_argument(
         "--parent-url",
         default=None,
         help="parent URL used to resolve relative links; defaults to connector start URL",
     )
-    tokyo_grants.add_argument(
-        "--live",
-        action="store_true",
-        help="explicit opt-in for future live fetch flow; fixture mode is the default",
-    )
-    tokyo_grants.set_defaults(handler=_run_tokyo_metro_grants)
-    return parser
 
 
-def _run_tokyo_metro_grants(args: argparse.Namespace) -> int:
-    if args.live:
-        print(
-            "--live is an explicit opt-in for manual live fetch; this CLI run made no network "
-            "request. Use fixture mode for reproducible ingest.",
-            file=sys.stderr,
-        )
-        return 2
-
-    if args.fixture_html is None:
-        print("--fixture-html is required for fixture mode", file=sys.stderr)
-        return 2
-
+def _run_tokyo_metro_grants_fixture(args: argparse.Namespace) -> int:
     try:
         fixture_bytes = args.fixture_html.read_bytes()
         fixture_html = fixture_bytes.decode("utf-8")
@@ -120,6 +129,15 @@ def _run_tokyo_metro_grants(args: argparse.Namespace) -> int:
         )
     )
     return 0
+
+
+def _run_tokyo_metro_grants_run(args: argparse.Namespace) -> int:
+    print(
+        "tokyo-metro-grants live ingest is not implemented yet; no network request was made. "
+        "Use `tokyo-metro-grants fixture` for deterministic local verification.",
+        file=sys.stderr,
+    )
+    return 2
 
 
 def main(argv: Sequence[str] | None = None) -> int:

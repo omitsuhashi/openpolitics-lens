@@ -170,3 +170,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `wiki/syntheses/tokyo-source-connector-design.md` を追加し、`tokyo_procurement`、`tokyo_budget_settlement`、`tokyo_audit_reports`、`tokyo_political_funds`、`tokyo_assembly_records_bills` の registry、fixture strategy、live acquisition conditions、non-goals、parse / OCR uncertainties、後続 implementation issue を整理。
 - jurisdiction 分離により、東京都固有の allowlist、rate limit、terms note、fixture、output path を future national / Yokohama / Osaka / other municipality connector へ漏らさない方針を明記。
 - verification は `git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+
+## [2026-07-07] implementation | Remove ingest `--live` flag
+
+- `tokyo-metro-grants` CLI から `--live` option を廃止し、`fixture` と `run` subcommand に分離。
+- `fixture` は local HTML と fake fetcher だけを使う deterministic verification path とした。
+- `run` は将来の cron / daily ingest 用 entrypoint として予約し、live fetch 実装前は network request を行わず status 2 で終了する。
+- `services/ingest/README.md` と `tokyo-subsidy-ingest-spec.md` / issue ledger を `--live` 廃止後の方針へ更新。
