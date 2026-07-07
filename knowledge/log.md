@@ -317,3 +317,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-007-input-packet.json`、`phase0-remainder-p0r-007-execution-envelope.json`、`phase0-remainder-p0r-007-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-006` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-007` branch をそこから作る方針にした。
 - 実行対象は政治資金収支報告書 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、金額・氏名・団体名の確定昇格、`FundingContact` 生成、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-007 political fund reports probe
+
+- `P0R-007` の worker 実装を review gate に通し、head `2d29d777e2898f6e5a13a6de0560fe8581bae917` を local `PR_READY` として記録。
+- `services/ingest/political_funds.py` を追加し、政治資金収支報告書の report index、政治団体名簿、PDF sample fixture metadata、text layer / OCR 要否、table locator、warning、confidence、review required を fixture-only probe として扱えるようにした。
+- 10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を生成し、`political_group_registry_observed` と `political_fund_report_metadata_observed` の direct claim を扱い、`FundingContact` などの非対象生成を拒否する guard を追加した。
+- verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- fixture-only のため、実際の東京都政治資金 source parsing、PDF download、OCR 挙動、live retrieval は未検証。sibling source probe との統合は後続 integration work item で扱う。
