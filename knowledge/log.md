@@ -311,3 +311,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `normalize_tokyo_election_candidate_observation` で 10 EvidenceItem、Candidate direct claim、選挙結果がある 6 件の ElectionResult direct claim を生成し、entity merge refs を拒否する guard を追加した。
 - verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - fixture-only のため、実際の東京都選挙 source parsing、PDF/OCR 挙動、live retrieval は未検証。`P0R-004`、`P0R-005`、`P0R-006` の `normalize/normalizer.py` 変更は final integration 時に統合対応が必要。
+
+## [2026-07-07] execution-plan | Approve P0R-007 political fund reports packet
+
+- `phase0-remainder-p0r-007-input-packet.json`、`phase0-remainder-p0r-007-execution-envelope.json`、`phase0-remainder-p0r-007-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-006` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-007` branch をそこから作る方針にした。
+- 実行対象は政治資金収支報告書 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、金額・氏名・団体名の確定昇格、`FundingContact` 生成、後続 source probe は非対象に残した。
