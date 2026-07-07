@@ -19,9 +19,9 @@ spec: official-political-events-ingest-spec.md
 
 | Epic ID | ローカルID | タイトル | レビュー状態 | 実行状態 | ブロック元 | ブロック先 | GitHub Issue | 実装レビュー | PR |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-008 | Source Registry と Coverage Ledger の contract を作る | 承認済み | PR_READY | なし | G2PR-009, G2PR-010, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | 未作成 |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-009 | OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る | 承認済み | PR_READY | G2PR-008 | G2PR-010, G2PR-011, G2PR-012, G2PR-013, G2PR-014, G2PR-015, G2PR-016 | 未作成 | 承認済み | 未作成 |
-| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-010 | 選挙・会議の coverage guard と欠落可視化を実装する | 承認済み | PR_READY | G2PR-008, G2PR-009 | G2PR-015, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | 未作成 |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-008 | Source Registry と Coverage Ledger の contract を作る | 承認済み | PR_READY | なし | G2PR-009, G2PR-010, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-009 | OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る | 承認済み | PR_READY | G2PR-008 | G2PR-010, G2PR-011, G2PR-012, G2PR-013, G2PR-014, G2PR-015, G2PR-016 | 未作成 | 承認済み | [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) |
+| OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-010 | 選挙・会議の coverage guard と欠落可視化を実装する | 承認済み | PR_READY | G2PR-008, G2PR-009 | G2PR-015, G2PR-016, G2PR-017, G2PR-018 | 未作成 | 承認済み | [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-011 | 国会会議録 API connector の fixture ingest を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-012 | 衆議院・参議院 schedule connector の fixture ingest を設計・実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |
 | OPL-OFFICIAL-POLITICAL-EVENTS-20260707 | G2PR-013 | e-Gov public comment connector の fixture ingest を実装する | 承認済み | ブロック中 | G2PR-008, G2PR-009 | なし | 未作成 | 未実施 | 未作成 |

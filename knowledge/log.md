@@ -250,3 +250,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - ユーザーの `PR作成までお願いします。` により、execution envelope revision 2 で remote write policy を `per_action` に更新。
 - 承認 remote action は `final_pr_push_head` と `final_pr_create_draft` に限定する。
 - PR は draft とし、final merge は human-only のまま扱う。
+
+## [2026-07-07] delivery | Create official political events draft PR
+
+- 統合 branch `codex/opl-official-political-events-20260707/final-pr` を `origin` に push。
+- GitHub draft PR [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) を `main` 向けに作成。
+- local ledger の `G2PR-008`、`G2PR-009`、`G2PR-010` の PR 欄を draft PR #2 に更新。
