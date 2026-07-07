@@ -429,11 +429,19 @@ class RequiredCoverageSummary:
 
     @property
     def has_all_required_coverage_records(self) -> bool:
-        return not self.missing_coverage_keys
+        return self.required_registry_configured and not self.missing_coverage_keys
 
     @property
     def is_complete(self) -> bool:
-        return self.has_all_required_coverage_records and not self.coverage_gap_keys
+        return (
+            self.required_registry_configured
+            and self.has_all_required_coverage_records
+            and not self.coverage_gap_keys
+        )
+
+    @property
+    def required_registry_configured(self) -> bool:
+        return self.required_source_count > 0
 
     @property
     def no_events_claimed(self) -> bool:
@@ -453,6 +461,7 @@ class RequiredCoverageSummary:
             "status_counts": {item.coverage_status: item.count for item in self.status_counts},
             "missing_coverage_keys": [list(key) for key in self.missing_coverage_keys],
             "coverage_gap_keys": [list(key) for key in self.coverage_gap_keys],
+            "required_registry_configured": self.required_registry_configured,
             "has_all_required_coverage_records": self.has_all_required_coverage_records,
             "is_complete": self.is_complete,
             "observed_event_count": self.observed_event_count,
@@ -486,16 +495,34 @@ def _coverage_records_by_key(
     return coverage_by_key
 
 
+def _registry_records_by_key(
+    registry_records: tuple[SourceRegistryRecord, ...],
+) -> dict[CoverageKey, SourceRegistryRecord]:
+    registry_by_key: dict[CoverageKey, SourceRegistryRecord] = {}
+    duplicate_keys: list[CoverageKey] = []
+    for record in registry_records:
+        key = record.coverage_key()
+        if key in registry_by_key:
+            duplicate_keys.append(key)
+            continue
+        registry_by_key[key] = record
+    if duplicate_keys:
+        duplicate_text = ", ".join("/".join(key) for key in duplicate_keys)
+        raise DuplicateSourceCoverageError(f"duplicate source registry records: {duplicate_text}")
+    return registry_by_key
+
+
 def summarize_required_coverage(
     registry_records: tuple[SourceRegistryRecord, ...],
     coverage_records: tuple[SourceCoverageRecord, ...],
     *,
     observed_event_count: int | None = None,
 ) -> RequiredCoverageSummary:
+    registry_by_key = _registry_records_by_key(registry_records)
     coverage_by_key = _coverage_records_by_key(coverage_records)
     required_records = tuple(
         record
-        for record in registry_records
+        for record in registry_by_key.values()
         if record.source_family in REQUIRED_COVERAGE_SOURCE_FAMILIES
     )
     missing_coverage_keys = tuple(
@@ -569,10 +596,11 @@ def validate_required_coverage_records(
     registry_records: tuple[SourceRegistryRecord, ...],
     coverage_records: tuple[SourceCoverageRecord, ...],
 ) -> None:
+    registry_by_key = _registry_records_by_key(registry_records)
     coverage_keys = set(_coverage_records_by_key(coverage_records))
     missing = [
         record.coverage_key()
-        for record in registry_records
+        for record in registry_by_key.values()
         if record.source_family in REQUIRED_COVERAGE_SOURCE_FAMILIES
         and record.coverage_key() not in coverage_keys
     ]
@@ -585,10 +613,11 @@ def connector_execution_targets(
     registry_records: tuple[SourceRegistryRecord, ...],
     coverage_records: tuple[SourceCoverageRecord, ...] = (),
 ) -> tuple[SourceRegistryRecord, ...]:
+    registry_by_key = _registry_records_by_key(registry_records)
     coverage_by_key = _coverage_records_by_key(coverage_records)
     return tuple(
         record
-        for record in registry_records
+        for record in registry_by_key.values()
         if record.is_connector_execution_target()
         and coverage_by_key.get(record.coverage_key(), record).coverage_status != "blocked_by_terms"
     )

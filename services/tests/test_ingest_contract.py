@@ -294,6 +294,15 @@ def test_required_coverage_summary_keeps_missing_coverage_from_being_complete() 
     assert summary.to_json_dict()["missing_coverage_keys"] == [list(registry.coverage_key())]
 
 
+def test_required_coverage_summary_keeps_empty_required_registry_incomplete() -> None:
+    summary = ingest.summarize_required_coverage((), ())
+
+    assert summary.required_source_count == 0
+    assert summary.has_all_required_coverage_records is False
+    assert summary.is_complete is False
+    assert summary.to_json_dict()["required_registry_configured"] is False
+
+
 def test_duplicate_coverage_records_are_rejected_for_deterministic_summaries() -> None:
     registry = _diet_schedule_registry_record()
     coverage = _coverage_record_for(registry)
@@ -303,6 +312,22 @@ def test_duplicate_coverage_records_are_rejected_for_deterministic_summaries() -
 
     with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
         validate_required_coverage_records((registry,), (coverage, coverage))
+
+
+def test_duplicate_registry_records_are_rejected_for_deterministic_summaries() -> None:
+    registry = _diet_schedule_registry_record()
+    duplicate_registry = replace(
+        registry,
+        operator_name="重複した運用者名",
+        connector_status="planned_duplicate",
+    )
+    coverage = _coverage_record_for(registry)
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        ingest.summarize_required_coverage((registry, duplicate_registry), (coverage,))
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        validate_required_coverage_records((registry, duplicate_registry), (coverage,))
 
 
 def test_fetch_and_parser_failures_are_preserved_as_manual_review_coverage() -> None:
