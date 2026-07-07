@@ -14,7 +14,7 @@ spec_gate_commit: 90a2e00
 
 `OPL-PHASE0-REMAINDER-20260707` では、Roadmap の Phase 0 gate を満たすため、まず RawArtifact / Evidence / source registry の共通 contract を固め、その後 Roadmap 対象 source 7 系統の fixture-first probe を実装する。
 
-`P0R-001` から `P0R-007` は実装レビュー承認済みで local `PR_READY` になった。`P0R-008` から `P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
+`P0R-001` から `P0R-008` は実装レビュー承認済みで local `PR_READY` になった。`P0R-009` と `P0R-010` は実行可能である。GitHub Issue mirror、push、PR 作成、live acquisition は行わない。
 
 ## Ledger
 
@@ -27,7 +27,7 @@ spec_gate_commit: 90a2e00
 | OPL-PHASE0-REMAINDER-20260707 | P0R-005 | 都議会 提出議案・議決結果 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-006 | 選挙公報・選挙結果 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-007 | 政治資金収支報告書 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
-| OPL-PHASE0-REMAINDER-20260707 | P0R-008 | 財務局・電子調達 契約/予算 probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
+| OPL-PHASE0-REMAINDER-20260707 | P0R-008 | 財務局・電子調達 契約/予算 probe を実装する | 承認済み | PR_READY | P0R-003 | P0R-012 | 未作成 | 承認済み | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-009 | 助成・補助金 `SubsidyProgramCandidate` probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-010 | 監査 source / `AuditFindingCandidate` probe を実装する | 承認済み | 実行可能 | P0R-003 | P0R-011, P0R-012 | 未作成 | 未実施 | 未作成 |
 | OPL-PHASE0-REMAINDER-20260707 | P0R-011 | 監査指摘とアプリ計算 signal の保存分離 contract を作る | 承認済み | ブロック中 | P0R-010 | P0R-012 | 未作成 | 未実施 | 未作成 |
@@ -48,7 +48,7 @@ P0R-003 -> P0R-010 -> P0R-011 -> P0R-012
 P0R-010 -> P0R-012
 ```
 
-cycle はない。`P0R-001` から `P0R-007` は local `PR_READY` になったため、`P0R-008` から `P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
+cycle はない。`P0R-001` から `P0R-008` は local `PR_READY` になったため、`P0R-009` と `P0R-010` が実行可能である。`P0R-004` から `P0R-010` は `P0R-003` 完了後に並列実行できるが、worker slot は 1 のため coordinator は 1 issue ずつ dispatch する。`P0R-011` は `P0R-010` 完了後、`P0R-012` は source probe と保存分離 contract 完了後に実行する。
 
 ## P0R-001: RawArtifact storage gate を確定する
 
@@ -321,6 +321,18 @@ PublicMoneyFlow の前段として、予算・決算 document と電子調達 se
 
 - 10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を fixture-only で生成する。
 - `BudgetLine` / `ContractAward` は確定 entity として生成しない guard がある。
+
+### 実装結果
+
+- branch: `codex/opl-phase0-remainder-20260707/P0R-008-procurement-budget-probe`
+- base: `7fb7c999aa4f67410379da2fa25a0cf248de2975`
+- head: `2aec47df033bcfdf1b0baeebba9807a115136624`
+- review range: `7fb7c999aa4f67410379da2fa25a0cf248de2975..2aec47df033bcfdf1b0baeebba9807a115136624`
+- 実装レビュー: 承認済み。独立レビューで Critical / Important / Minor なし。
+- 実装内容: `services/ingest/phase0_sources.py` と `services/normalize/normalizer.py` を拡張し、budget / settlement index fixture と procurement search snapshot fixture を fixture-only で扱えるようにした。`budget_document_metadata_observed`、`budget_table_cell_observed`、`procurement_search_row_observed` を生成し、amount unit、税込・税抜、vendor 名寄せ、契約案との突合は warning / metadata / non-goal guard として扱う。
+- verification: `uv run pytest -q` は 69 passed、`uv run ruff check .` は passed、`uv run ruff format --check .` は passed、`git diff --check` は passed。
+- 残リスク: fixture-only のため、実際の東京都予算・決算・電子調達 source parsing は未検証。`P0R-008` は `P0R-003` head から `normalize/normalizer.py` を拡張しているため、final integration 時に sibling source probe との統合対応が必要。
+- blocker release: `P0R-012` はまだ `P0R-009` から `P0R-011` 待ち。次は `P0R-009` または `P0R-010` を実行可能 issue とする。
 
 ## P0R-009: 助成・補助金 `SubsidyProgramCandidate` probe を実装する
 

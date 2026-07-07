@@ -331,3 +331,11 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-008-input-packet.json`、`phase0-remainder-p0r-008-execution-envelope.json`、`phase0-remainder-p0r-008-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-007` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-008` branch をそこから作る方針にした。
 - 実行対象は財務局・電子調達 契約/予算 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、BudgetLine / ContractAward / PublicMoneyFlow の確定生成、vendor 名寄せ・契約突合の確定判断、後続 source probe は非対象に残した。
+
+## [2026-07-07] implementation | P0R-008 procurement budget probe
+
+- `P0R-008` の worker 実装を review gate に通し、head `2aec47df033bcfdf1b0baeebba9807a115136624` を local `PR_READY` として記録。
+- `services/ingest/phase0_sources.py` と `services/normalize/normalizer.py` を拡張し、budget / settlement index fixture と procurement search snapshot fixture を fixture-only で扱えるようにした。
+- `budget_document_metadata_observed`、`budget_table_cell_observed`、`procurement_search_row_observed` を生成し、amount unit、税込・税抜、vendor 名寄せ、契約案との突合は warning / metadata / non-goal guard として扱う。
+- verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- fixture-only のため、実際の東京都予算・決算・電子調達 source parsing は未検証。`normalize/normalizer.py` の sibling source probe との統合は後続 integration work item で扱う。
