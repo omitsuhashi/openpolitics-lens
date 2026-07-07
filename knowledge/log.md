@@ -372,3 +372,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-011-input-packet.json`、`phase0-remainder-p0r-011-execution-envelope.json`、`phase0-remainder-p0r-011-execution-handoff.md` を追加。
 - `P0R-010` head `ba3fd23e125ed1c502f1487a3b79258fd447b970` を blocker head base とし、`P0R-011` branch をそこから作る方針にした。
 - 実行対象は `AuditFindingCandidate` と `SpendingReviewSignalCandidate` の保存分離 contract に限定し、public UI、score、ranking、live source 取得、P0R-012 coverage CLI は非対象に残した。
+
+## [2026-07-07] implementation-result | P0R-011 audit signal storage separation PR_READY
+
+- `P0R-011` は branch `codex/opl-phase0-remainder-20260707/P0R-011-audit-signal-storage-separation`、head `e793c9e7f3290c742608d1f77bc144b609d4b65c` で local `PR_READY`。
+- `AuditFindingCandidate` と `SpendingReviewSignalCandidate` を別 contract / table / claim type として定義し、app-calculated candidate を `public_visibility=internal_only`、score / severity 非保持、public `SpendingReviewSignal` 非生成として guard した。
+- verification は `uv run pytest -q` 71 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- live database migration apply は未実施。`P0R-012` を次の実行可能 issue とする。
