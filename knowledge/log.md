@@ -282,3 +282,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `normalize_assembly_records_search_snapshot` で 10 EvidenceItem と `speech_text_observed` direct claim を生成し、政策 stance / 意味分類は生成しない guard を追加した。
 - verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - live search / browser automation は通常 test に入らず、fixture contents は deterministic synthetic snapshot として扱う。
+
+## [2026-07-07] execution-plan | Approve P0R-005 assembly bills packet
+
+- `phase0-remainder-p0r-005-input-packet.json`、`phase0-remainder-p0r-005-execution-envelope.json`、`phase0-remainder-p0r-005-execution-handoff.md` を追加。dependency validation のため、完了済み prerequisite として `P0R-001`、`P0R-002`、`P0R-003` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-005` branch をそこから作る方針にした。
+- 実行対象は都議会 提出議案・議決結果 probe の fixture-only 実装に限定し、個人別賛否、`VotePosition`、政策 stance / 意味分類、後続 source probe は非対象に残した。
