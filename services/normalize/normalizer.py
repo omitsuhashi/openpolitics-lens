@@ -1,3 +1,4 @@
+import json
 import re
 from dataclasses import dataclass
 from html import unescape
@@ -7,6 +8,7 @@ from ingest.contracts import FetchManifestRecord
 from normalize.contracts import (
     EvidenceClaim,
     EvidenceItem,
+    JsonDict,
     NormalizeResult,
     SourceDocument,
     build_observed_claim,
@@ -21,7 +23,47 @@ class _ExtractedTitle:
     source_span_end: int
 
 
-_TITLE_PATTERN = re.compile(rb"<title\b[^>]*>(?P<title>.*?)</title\s*>", re.IGNORECASE | re.DOTALL)
+@dataclass(frozen=True, slots=True)
+class _ExtractedAssemblySpeech:
+    quote_text: str
+    normalized_text: str
+    source_span_start: int
+    source_span_end: int
+    location_metadata: JsonDict
+
+
+_TITLE_PATTERN = re.compile(
+    rb"<title\b[^>]*>(?P<title>.*?)</title\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_METADATA_PATTERN = re.compile(
+    rb"<script\b(?=[^>]*\bid=[\"']assembly-speech-metadata[\"'])[^>]*>"
+    rb"(?P<metadata>.*?)"
+    rb"</script\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_SPEECH_PATTERN = re.compile(
+    rb"<p\b(?=[^>]*\bclass=[\"']speech-text[\"'])[^>]*>"
+    rb"(?P<speech>.*?)"
+    rb"</p\s*>",
+    re.IGNORECASE | re.DOTALL,
+)
+_ASSEMBLY_REQUIRED_LOCATION_METADATA_KEYS: tuple[str, ...] = (
+    "search_form_url",
+    "query_parameters",
+    "target_period",
+    "page_number",
+    "sort_order",
+    "snapshot_timestamp",
+    "result_row_locator",
+    "meeting_id",
+    "meeting_name",
+    "meeting_date",
+    "speaker_name",
+    "speaker_role",
+    "speech_block_id",
+    "speech_block_locator",
+)
 
 
 def _collapse_whitespace(value: str) -> str:
@@ -69,6 +111,24 @@ def _validate_grant_program_page_input(record: FetchManifestRecord) -> None:
         raise ValueError(msg)
 
 
+def _validate_assembly_records_input(record: FetchManifestRecord) -> None:
+    candidate = record.source_document_candidate
+    if candidate.source_type != "assembly_meeting_record_search_snapshot":
+        msg = f"unsupported source_type for assembly records normalization: {candidate.source_type}"
+        raise ValueError(msg)
+
+    if candidate.source_family != "tokyo_assembly_records_bills":
+        msg = (
+            "unsupported source_family for assembly records normalization: "
+            f"{candidate.source_family}"
+        )
+        raise ValueError(msg)
+
+    if "text/html" not in record.media_type.lower():
+        msg = f"unsupported media_type for assembly records normalization: {record.media_type}"
+        raise ValueError(msg)
+
+
 def _extract_title(raw_html: bytes) -> _ExtractedTitle:
     match = _TITLE_PATTERN.search(raw_html)
     if match is None:
@@ -92,6 +152,64 @@ def _extract_title(raw_html: bytes) -> _ExtractedTitle:
         normalized_text=normalized_text,
         source_span_start=source_span_start,
         source_span_end=source_span_end,
+    )
+
+
+def _extract_assembly_location_metadata(raw_html: bytes) -> JsonDict:
+    match = _ASSEMBLY_METADATA_PATTERN.search(raw_html)
+    if match is None:
+        msg = "assembly speech metadata script is required"
+        raise ValueError(msg)
+
+    try:
+        metadata = json.loads(unescape(match.group("metadata").decode("utf-8")).strip())
+    except json.JSONDecodeError as exc:
+        msg = "assembly speech metadata script must contain JSON"
+        raise ValueError(msg) from exc
+
+    if not isinstance(metadata, dict):
+        msg = "assembly speech metadata must be a JSON object"
+        raise ValueError(msg)
+
+    missing_keys = [key for key in _ASSEMBLY_REQUIRED_LOCATION_METADATA_KEYS if key not in metadata]
+    if missing_keys:
+        msg = "assembly speech metadata missing keys: " + ", ".join(missing_keys)
+        raise ValueError(msg)
+
+    if not isinstance(metadata["query_parameters"], dict):
+        msg = "assembly speech query_parameters must be a JSON object"
+        raise ValueError(msg)
+    if not isinstance(metadata["target_period"], dict):
+        msg = "assembly speech target_period must be a JSON object"
+        raise ValueError(msg)
+
+    return dict(metadata)
+
+
+def _extract_assembly_speech(raw_html: bytes) -> _ExtractedAssemblySpeech:
+    match = _ASSEMBLY_SPEECH_PATTERN.search(raw_html)
+    if match is None:
+        msg = "assembly speech text block is required"
+        raise ValueError(msg)
+
+    speech_start, _speech_end = match.span("speech")
+    speech_bytes = match.group("speech")
+    stripped_speech_bytes = speech_bytes.strip()
+    leading_whitespace = len(speech_bytes) - len(speech_bytes.lstrip())
+    source_span_start = speech_start + leading_whitespace
+    source_span_end = source_span_start + len(stripped_speech_bytes)
+    quote_text = stripped_speech_bytes.decode("utf-8")
+    normalized_text = _collapse_whitespace(unescape(quote_text))
+    if not normalized_text:
+        msg = "assembly speech text is empty"
+        raise ValueError(msg)
+
+    return _ExtractedAssemblySpeech(
+        quote_text=quote_text,
+        normalized_text=normalized_text,
+        source_span_start=source_span_start,
+        source_span_end=source_span_end,
+        location_metadata=_extract_assembly_location_metadata(raw_html),
     )
 
 
@@ -181,6 +299,59 @@ def _build_title_claim(
     )
 
 
+def _build_assembly_speech_evidence_item(
+    *,
+    source_document: SourceDocument,
+    extracted_speech: _ExtractedAssemblySpeech,
+) -> EvidenceItem:
+    evidence_item_id = _stable_uuid(
+        "evidence_item",
+        source_document.source_document_id,
+        "assembly_speech_text",
+        extracted_speech.source_span_start,
+        extracted_speech.source_span_end,
+        extracted_speech.quote_text,
+    )
+
+    return EvidenceItem(
+        evidence_item_id=evidence_item_id,
+        source_document_id=source_document.source_document_id,
+        location_type="api_record",
+        location_value=str(extracted_speech.location_metadata["speech_block_locator"]),
+        source_span_start=extracted_speech.source_span_start,
+        source_span_end=extracted_speech.source_span_end,
+        quote_text=extracted_speech.quote_text,
+        normalized_text=extracted_speech.normalized_text,
+        raw_artifact_path=source_document.raw_artifact_path,
+        extraction_method="search_ui_snapshot",
+        confidence=1.0,
+        location_metadata=extracted_speech.location_metadata,
+        parse_warnings=("search_ui_snapshot", "meaning_not_interpreted"),
+    )
+
+
+def _build_assembly_speech_claim(
+    *,
+    source_document: SourceDocument,
+    evidence_item: EvidenceItem,
+) -> EvidenceClaim:
+    evidence_claim_id = _stable_uuid(
+        "evidence_claim",
+        evidence_item.evidence_item_id,
+        "speech_text_observed",
+        evidence_item.normalized_text,
+    )
+
+    return build_observed_claim(
+        evidence_claim_id=evidence_claim_id,
+        claim_type="speech_text_observed",
+        subject_ref=source_document.source_document_id,
+        object_value=evidence_item.normalized_text,
+        evidence_item=evidence_item,
+        source_family=source_document.source_family,
+    )
+
+
 def normalize_grant_program_page(
     record: FetchManifestRecord,
     raw_html: bytes,
@@ -200,6 +371,36 @@ def normalize_grant_program_page(
         extracted_title=extracted_title,
     )
     evidence_claim = _build_title_claim(
+        source_document=source_document,
+        evidence_item=evidence_item,
+    )
+
+    return NormalizeResult(
+        source_document=source_document,
+        evidence_items=(evidence_item,),
+        evidence_claims=(evidence_claim,),
+    )
+
+
+def normalize_assembly_records_search_snapshot(
+    record: FetchManifestRecord,
+    raw_html: bytes,
+    *,
+    raw_artifact_id: str,
+) -> NormalizeResult:
+    _validate_candidate_invariants(record)
+    _validate_assembly_records_input(record)
+    extracted_speech = _extract_assembly_speech(raw_html)
+    source_document = _promote_source_document(
+        record,
+        raw_artifact_id=raw_artifact_id,
+        title=record.source_document_candidate.title,
+    )
+    evidence_item = _build_assembly_speech_evidence_item(
+        source_document=source_document,
+        extracted_speech=extracted_speech,
+    )
+    evidence_claim = _build_assembly_speech_claim(
         source_document=source_document,
         evidence_item=evidence_item,
     )

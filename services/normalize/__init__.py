@@ -11,7 +11,10 @@ from normalize.contracts import (
     can_promote_to_evidence_claim,
     claim_catalog_entry,
 )
-from normalize.normalizer import normalize_grant_program_page
+from normalize.normalizer import (
+    normalize_assembly_records_search_snapshot,
+    normalize_grant_program_page,
+)
 
 __all__ = [
     "CLAIM_TYPE_CATALOG",
@@ -25,5 +28,6 @@ __all__ = [
     "build_observed_claim",
     "can_promote_to_evidence_claim",
     "claim_catalog_entry",
+    "normalize_assembly_records_search_snapshot",
     "normalize_grant_program_page",
 ]
