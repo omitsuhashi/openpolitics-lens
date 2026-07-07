@@ -40,6 +40,11 @@ def _raw_artifact_id(record: ingest.FetchManifestRecord) -> str:
     return str(rows.raw_artifact["raw_artifact_id"])
 
 
+def _tokyo_election_raw_artifact_id(record: ingest.FetchManifestRecord) -> str:
+    rows = ingest.build_fetch_manifest_db_rows(record, object_bucket="ingest-raw")
+    return str(rows.raw_artifact["raw_artifact_id"])
+
+
 def test_normalize_grant_program_page_promotes_candidate_and_title_evidence() -> None:
     record = _fetch_manifest_record()
     raw_artifact_id = _raw_artifact_id(record)
@@ -141,6 +146,88 @@ def test_normalize_keeps_quote_text_as_decoded_source_span_and_normalizes_title(
         raw_title.encode()
     )
     assert result.evidence_claims[0].object_value == normalized_title
+
+
+def test_normalize_tokyo_election_fixture_promotes_direct_candidate_observations() -> None:
+    fixture_records = ingest.build_tokyo_election_fixture_manifest_records()
+    observations = [
+        normalize.ElectionCandidateObservation(
+            election_name=f"東京都議会議員選挙 2025 sample {index}",
+            district=f"第{index}選挙区",
+            candidate_name=f"候補者{index}",
+            votes=(
+                10_000 + index
+                if record.source_document_candidate.source_type != "public_bulletin_metadata"
+                else None
+            ),
+            source_url=record.canonical_url,
+            retrieved_at=record.fetched_at,
+            source_locator=f"fixture-row-{index}",
+        )
+        for index, record in enumerate(fixture_records, start=1)
+    ]
+
+    results = [
+        normalize.normalize_tokyo_election_candidate_observation(
+            record,
+            observation,
+            raw_artifact_id=_tokyo_election_raw_artifact_id(record),
+        )
+        for record, observation in zip(fixture_records, observations, strict=True)
+    ]
+
+    evidence_items = [item for result in results for item in result.evidence_items]
+    claims = [claim for result in results for claim in result.evidence_claims]
+    assert len(evidence_items) == 10
+    assert len(claims) == 16
+    assert {claim.claim_type for claim in claims} == {
+        "election_candidate_observed",
+        "election_result_observed",
+    }
+    assert sum(claim.claim_type == "election_result_observed" for claim in claims) == 6
+    assert sum(claim.claim_type == "election_candidate_observed" for claim in claims) == 10
+
+    first_payload = json.loads(evidence_items[0].normalized_text)
+    assert first_payload == {
+        "election_name": "東京都議会議員選挙 2025 sample 1",
+        "district": "第1選挙区",
+        "candidate_name": "候補者1",
+        "votes": 10001,
+        "source_url": fixture_records[0].canonical_url,
+        "retrieved_at": "2026-07-07T00:00:00Z",
+    }
+    assert evidence_items[0].location_type == "api_record"
+    assert evidence_items[0].extraction_method == "fixture_structured_election_record"
+    assert evidence_items[0].location_metadata["source_type"] == "election_result_html"
+    assert evidence_items[0].location_metadata["source_url"] == fixture_records[0].canonical_url
+    assert evidence_items[0].location_metadata["retrieved_at"] == "2026-07-07T00:00:00Z"
+
+    assert all(claim.object_ref is None for claim in claims)
+    assert all(not claim.subject_ref.startswith("person:") for claim in claims)
+    assert all(not claim.subject_ref.startswith("political_group:") for claim in claims)
+    assert all(claim.review_state == "machine_extracted" for claim in claims)
+    normalize.validate_tokyo_election_claims_do_not_merge_entities(claims)
+
+
+def test_tokyo_election_normalizer_rejects_entity_merge_refs() -> None:
+    fixture_record = ingest.build_tokyo_election_fixture_manifest_records()[0]
+    observation = normalize.ElectionCandidateObservation(
+        election_name="東京都議会議員選挙 2025",
+        district="中央区",
+        candidate_name="候補者A",
+        votes=12345,
+        source_url=fixture_record.canonical_url,
+        retrieved_at=fixture_record.fetched_at,
+        source_locator="fixture-row-1",
+        entity_ref="person:resolved-candidate-a",
+    )
+
+    with pytest.raises(ValueError, match="must not carry entity merge refs"):
+        normalize.normalize_tokyo_election_candidate_observation(
+            fixture_record,
+            observation,
+            raw_artifact_id=_tokyo_election_raw_artifact_id(fixture_record),
+        )
 
 
 def test_evidence_item_serializes_locator_warnings_and_extraction_artifact_path() -> None:
