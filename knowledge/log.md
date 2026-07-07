@@ -325,3 +325,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 10 RawArtifact / SourceDocumentCandidate と 10 EvidenceItem を生成し、`political_group_registry_observed` と `political_fund_report_metadata_observed` の direct claim を扱い、`FundingContact` などの非対象生成を拒否する guard を追加した。
 - verification は `uv run pytest -q` 69 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
 - fixture-only のため、実際の東京都政治資金 source parsing、PDF download、OCR 挙動、live retrieval は未検証。sibling source probe との統合は後続 integration work item で扱う。
+
+## [2026-07-07] execution-plan | Approve P0R-008 procurement budget packet
+
+- `phase0-remainder-p0r-008-input-packet.json`、`phase0-remainder-p0r-008-execution-envelope.json`、`phase0-remainder-p0r-008-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-007` も packet / envelope に含めた。
+- `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-008` branch をそこから作る方針にした。
+- 実行対象は財務局・電子調達 契約/予算 probe の fixture-only 実装に限定し、live source 取得、PDF download、OCR 実行、BudgetLine / ContractAward / PublicMoneyFlow の確定生成、vendor 名寄せ・契約突合の確定判断、後続 source probe は非対象に残した。

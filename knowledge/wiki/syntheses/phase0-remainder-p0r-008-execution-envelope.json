@@ -1,0 +1,198 @@
+{
+  "schema_version": 3,
+  "epic_id": "opl-phase0-remainder-20260707",
+  "revision": 1,
+  "epic_base": {
+    "ref": "codex/opl-phase0-remainder-20260707/epic-base",
+    "sha": "f63f6afefadc4da323cc2a11d5eea53a3f472f81",
+    "branch_state": "active"
+  },
+  "execution_policy": {
+    "parallel_preferred": false,
+    "serial_fallback_preapproved": true,
+    "worker_context_required": true,
+    "coordinator_may_implement": false,
+    "serial_fallback_mode": "worker_context_only",
+    "implementation_slots": 1,
+    "review_slots": 1,
+    "wave_is_barrier": false
+  },
+  "review_policy": {
+    "primary": "requesting-code-review",
+    "fallbacks": ["equivalent-independent-reviewer"],
+    "manual_fallback_preapproved": false,
+    "max_review_cycles": 2,
+    "max_fix_cycles": 2,
+    "same_finding_limit": 2,
+    "hardening_candidates": {
+      "candidate_registry_path": "decisions/hardening-candidates.json",
+      "max_candidates_per_issue": 5,
+      "max_summary_words": 80,
+      "issue_completion_blocking": false,
+      "ready_or_merge_requires_decisions": true,
+      "worker_packet_decision_state": "forbidden"
+    }
+  },
+  "human_policy": {
+    "default_scope": "issue",
+    "epic_scope_requires_reason": true
+  },
+  "context_policy": {
+    "paths_first": true,
+    "max_worker_packet_words": 450,
+    "max_worker_report_words": 350,
+    "include_full_spec_text": false,
+    "include_full_ledger_text": false,
+    "worker_packet_schema": "assets/schemas/worker-packet.schema.json",
+    "worker_packet_template": "assets/templates/worker-packet.json",
+    "worker_packet_validator": "scripts/validate_worker_packet.py",
+    "session_compaction": {
+      "soft_trigger_percent": 65,
+      "hard_stop_percent": 75,
+      "mandatory_handoff_compaction": 1,
+      "mandatory_phase_transition_gc": true,
+      "carry_forward_capsule_words_default": 400,
+      "carry_forward_capsule_words_hard": 600,
+      "inline_json_code_diff_lines_hard": 80
+    }
+  },
+  "phase_branch_policy": {
+    "planning_artifacts_branch": "current_session_branch",
+    "phase_approval_commit_required": true,
+    "phase_transition_requires_clean_scope": true,
+    "execution_coordinator_context": "fresh_or_compacted",
+    "main_planning_session_may_implement": false,
+    "worktree_per_issue": true,
+    "branch_prefix": "codex",
+    "epic_base_ref_pattern": "codex/<epic-id>/epic-base",
+    "issue_branch_pattern": "codex/<epic-id>/<local-id>-<slug>",
+    "epic_base_owner": "execution_coordinator",
+    "issue_branch_owner": "worker",
+    "integration_branch_policy": "approved_integration_work_item_only"
+  },
+  "remote_write_policy": {
+    "mode": "local_only",
+    "approved_actions": []
+  },
+  "work_items": {
+    "P0R-001": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-001-rawartifact-storage-gate",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-001",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "epic_base"},
+      "write_scope": ["path:services/ingest", "path:services/tests", "path:packages/db"],
+      "dependencies": []
+    },
+    "P0R-002": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-002-evidence-schema-warning-catalog",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-002",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-001"},
+      "write_scope": ["path:services/normalize", "path:services/tests", "path:packages/db"],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-003": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-003-source-registry-fixture-harness",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-003",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-002"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-001",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "none"
+        },
+        {
+          "issue": "P0R-002",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-004": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-004-assembly-records-probe",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-004",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-003"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-005": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-005-assembly-bills-decisions-probe",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-005",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-003"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-006": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-006-election-results-bulletins-probe",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-006",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-003"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-007": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-007-political-fund-reports-probe",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-007",
+      "worktree_state": "reserved",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-003"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    "P0R-008": {
+      "branch": "codex/opl-phase0-remainder-20260707/P0R-008-procurement-budget-probe",
+      "worktree_path": "/private/tmp/openpolitics-lens-worktrees/opl-phase0-remainder-20260707/P0R-008",
+      "worktree_state": "create_on_run",
+      "base_policy": {"type": "blocker_head", "issue": "P0R-003"},
+      "write_scope": ["path:services/ingest", "path:services/normalize", "path:services/tests"],
+      "dependencies": [
+        {
+          "issue": "P0R-003",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    }
+  }
+}
