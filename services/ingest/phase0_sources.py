@@ -172,6 +172,158 @@ class FixtureCoverageSummary:
         }
 
 
+MINIMUM_PHASE0_COMPLETION_SOURCE_FAMILY_COUNT = 5
+REQUIRED_PHASE0_COMPLETION_SOURCE_FAMILIES: frozenset[str] = frozenset(
+    {
+        "tokyo_metro_grants",
+        "tokyo_audit_reports",
+    }
+)
+PHASE0_FIXTURE_REPORT_JSON_FILENAME = "phase0-fixture-report.json"
+PHASE0_FEASIBILITY_REPORT_RELATIVE_PATH = (
+    "knowledge/wiki/syntheses/phase0-source-probe-feasibility-report.md"
+)
+
+
+_SOURCE_NON_GOAL_GUARDS: dict[str, tuple[str, ...]] = {
+    "tokyo_assembly_records_bills": (
+        "VotePosition は source にない限り生成しない",
+        "発言の政策 stance や意味分類は行わない",
+    ),
+    "tokyo_elections": (
+        "人物、政治団体、政党支部、後援会を自動 merge しない",
+        "source から直接観測できない Candidate / ElectionResult は確定しない",
+    ),
+    "tokyo_political_funds": (
+        "FundingContact は生成しない",
+        "PDF download と OCR 実行は通常検証で行わない",
+    ),
+    "tokyo_budget_settlement": (
+        "BudgetLine は確定 entity として生成しない",
+        "PublicMoneyFlow と SpendingReviewSignal は生成しない",
+    ),
+    "tokyo_procurement": (
+        "ContractAward は確定 entity として生成しない",
+        "vendor 名寄せと契約案との突合は行わない",
+    ),
+    "tokyo_metro_grants": (
+        "PublicMoneyFlow は生成しない",
+        "個別交付先、金額、成果は生成しない",
+    ),
+    "tokyo_audit_reports": (
+        "AuditFindingCandidate は公式文言を保持し、アプリ側評価語を混ぜない",
+        "public SpendingReviewSignal、score、ranking は生成しない",
+    ),
+}
+
+
+_SOURCE_FAMILY_BLOCKED_REASONS: dict[str, str] = {
+    "tokyo_assembly_records_bills": (
+        "fixture probe not implemented for assembly records and bill decisions"
+    ),
+    "tokyo_elections": "fixture probe not implemented for election result and bulletin sources",
+    "tokyo_political_funds": "fixture probe not implemented for political funds reports",
+    "tokyo_budget_settlement": "fixture probe not implemented for budget and settlement sources",
+    "tokyo_procurement": "fixture probe not implemented for procurement search snapshots",
+    "tokyo_metro_grants": "SubsidyProgramCandidate 10 sample baseline is not yet present",
+    "tokyo_audit_reports": "audit report fixture target is not yet satisfied",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class Phase0FixtureReportRow:
+    source_family: str
+    roadmap_source_labels: tuple[str, ...]
+    status: str
+    raw_artifact_count: int
+    source_document_candidate_count: int
+    evidence_item_count: int
+    warning_count: int
+    review_required_count: int
+    target: FixtureCoverageTarget
+    non_goal_guard: tuple[str, ...]
+    blocked_reason: str | None
+
+    @property
+    def meets_target(self) -> bool:
+        return self.status == "complete"
+
+    def to_json_dict(self) -> JsonDict:
+        return {
+            "source_family": self.source_family,
+            "roadmap_source_labels": list(self.roadmap_source_labels),
+            "status": self.status,
+            "raw_artifact_count": self.raw_artifact_count,
+            "source_document_candidate_count": self.source_document_candidate_count,
+            "evidence_item_count": self.evidence_item_count,
+            "warning_count": self.warning_count,
+            "review_required_count": self.review_required_count,
+            "target": self.target.to_json_dict(),
+            "meets_target": self.meets_target,
+            "non_goal_guard": list(self.non_goal_guard),
+            "blocked_reason": self.blocked_reason,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class Phase0FixtureReport:
+    source_families: tuple[Phase0FixtureReportRow, ...]
+    minimum_required_source_family_count: int = MINIMUM_PHASE0_COMPLETION_SOURCE_FAMILY_COUNT
+    required_source_families: frozenset[str] = REQUIRED_PHASE0_COMPLETION_SOURCE_FAMILIES
+
+    @property
+    def achieved_source_families(self) -> tuple[str, ...]:
+        return tuple(row.source_family for row in self.source_families if row.meets_target)
+
+    @property
+    def achieved_source_family_count(self) -> int:
+        return len(self.achieved_source_families)
+
+    @property
+    def missing_required_source_families(self) -> tuple[str, ...]:
+        achieved = set(self.achieved_source_families)
+        return tuple(
+            source_family
+            for source_family in PHASE0_SOURCE_REGISTRY
+            if source_family in self.required_source_families and source_family not in achieved
+        )
+
+    @property
+    def coverage_source_family_goal_met(self) -> bool:
+        return self.achieved_source_family_count >= self.minimum_required_source_family_count
+
+    @property
+    def required_source_families_goal_met(self) -> bool:
+        return not self.missing_required_source_families
+
+    @property
+    def phase0_status(self) -> str:
+        if self.coverage_source_family_goal_met and self.required_source_families_goal_met:
+            return "complete"
+        return "incomplete"
+
+    def to_json_dict(self) -> JsonDict:
+        return {
+            "phase0_status": self.phase0_status,
+            "minimum_required_source_family_count": self.minimum_required_source_family_count,
+            "roadmap_source_labels": list(PHASE0_ROADMAP_SOURCE_LABELS),
+            "roadmap_source_label_count": len(PHASE0_ROADMAP_SOURCE_LABELS),
+            "source_family_count": len(self.source_families),
+            "achieved_source_family_count": self.achieved_source_family_count,
+            "achieved_source_families": list(self.achieved_source_families),
+            "coverage_source_family_goal_met": self.coverage_source_family_goal_met,
+            "required_source_families": list(
+                source_family
+                for source_family in PHASE0_SOURCE_REGISTRY
+                if source_family in self.required_source_families
+            ),
+            "required_source_families_goal_met": self.required_source_families_goal_met,
+            "missing_required_source_families": list(self.missing_required_source_families),
+            "forbidden_operations_not_used": sorted(NORMAL_TEST_FORBIDDEN_OPERATIONS),
+            "source_families": [row.to_json_dict() for row in self.source_families],
+        }
+
+
 PHASE0_SOURCE_REGISTRY: dict[str, Phase0SourceRegistryEntry] = {
     "tokyo_assembly_records_bills": Phase0SourceRegistryEntry(
         connector=_connector(
@@ -389,3 +541,161 @@ def summarize_phase0_fixture_coverage(
         )
         for source_family, source_counts in counts.items()
     }
+
+
+def build_phase0_fixture_report(
+    summaries: dict[str, FixtureCoverageSummary],
+) -> Phase0FixtureReport:
+    missing_source_families = set(PHASE0_SOURCE_REGISTRY) - set(summaries)
+    if missing_source_families:
+        msg = "missing fixture coverage summaries: " + ", ".join(sorted(missing_source_families))
+        raise ValueError(msg)
+
+    rows = tuple(
+        _build_phase0_fixture_report_row(summary=summaries[source_family])
+        for source_family in PHASE0_SOURCE_REGISTRY
+    )
+    return Phase0FixtureReport(source_families=rows)
+
+
+def _build_phase0_fixture_report_row(
+    *,
+    summary: FixtureCoverageSummary,
+) -> Phase0FixtureReportRow:
+    source_family = summary.source_family
+    registry_entry = PHASE0_SOURCE_REGISTRY[source_family]
+    status = "complete" if summary.meets_target else "blocked"
+    blocked_reason = None if summary.meets_target else _build_blocked_reason(summary)
+
+    return Phase0FixtureReportRow(
+        source_family=source_family,
+        roadmap_source_labels=registry_entry.roadmap_source_labels,
+        status=status,
+        raw_artifact_count=summary.raw_artifact_count,
+        source_document_candidate_count=summary.source_document_candidate_count,
+        evidence_item_count=summary.evidence_item_count,
+        warning_count=summary.warning_count,
+        review_required_count=summary.review_required_count,
+        target=summary.target,
+        non_goal_guard=_SOURCE_NON_GOAL_GUARDS[source_family],
+        blocked_reason=blocked_reason,
+    )
+
+
+def _build_blocked_reason(summary: FixtureCoverageSummary) -> str:
+    target = summary.target
+    deficits: list[str] = []
+    if summary.raw_artifact_count < target.raw_artifact_count:
+        deficits.append(f"RawArtifact {summary.raw_artifact_count}/{target.raw_artifact_count}")
+    if summary.source_document_candidate_count < target.source_document_candidate_count:
+        deficits.append(
+            "SourceDocumentCandidate "
+            f"{summary.source_document_candidate_count}/{target.source_document_candidate_count}"
+        )
+    if summary.evidence_item_count < target.evidence_item_count:
+        deficits.append(f"EvidenceItem {summary.evidence_item_count}/{target.evidence_item_count}")
+
+    source_family_reason = _SOURCE_FAMILY_BLOCKED_REASONS[summary.source_family]
+    if (
+        summary.raw_artifact_count == 0
+        and summary.source_document_candidate_count == 0
+        and summary.evidence_item_count == 0
+    ):
+        return f"{source_family_reason}; target not met: {', '.join(deficits)}"
+    return f"target not met: {', '.join(deficits)}; {source_family_reason}"
+
+
+def render_phase0_feasibility_markdown(report: Phase0FixtureReport) -> str:
+    lines = [
+        "---",
+        "kind: synthesis",
+        "created: 2026-07-07",
+        "updated: 2026-07-07",
+        "epic_id: OPL-PHASE0-REMAINDER-20260707",
+        f"status: phase0-{report.phase0_status}",
+        "---",
+        "",
+        "# Phase 0 source probe feasibility report",
+        "",
+        "## 結論",
+        "",
+        f"Phase 0 判定: `{report.phase0_status}`",
+        "",
+        (
+            f"- 達成 source family: {report.achieved_source_family_count}/"
+            f"{len(report.source_families)}"
+        ),
+        (
+            f"- 最低 gate: {report.minimum_required_source_family_count} source family 以上で "
+            "RawArtifact / SourceDocumentCandidate / EvidenceItem が各 10 件以上"
+        ),
+        (
+            "- 必須 source family: "
+            + ", ".join(sorted(report.required_source_families))
+            + (" は達成済み" if report.required_source_families_goal_met else " は未達を含む")
+        ),
+        ("- 通常検証では external network / browser automation / PDF download / OCR を実行しない"),
+        "",
+        "## Roadmap 対象 source",
+        "",
+        *[f"- {label}" for label in PHASE0_ROADMAP_SOURCE_LABELS],
+        "",
+        "## Source family coverage",
+        "",
+        (
+            "| source_family | status | RawArtifact | SourceDocumentCandidate | "
+            "EvidenceItem | warnings | review_required | blocked_reason |"
+        ),
+        "| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+
+    for row in report.source_families:
+        blocked_reason = row.blocked_reason or ""
+        lines.append(
+            f"| {row.source_family} | {row.status} | {row.raw_artifact_count} | "
+            f"{row.source_document_candidate_count} | {row.evidence_item_count} | "
+            f"{row.warning_count} | {row.review_required_count} | {blocked_reason} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Non-goal guard",
+            "",
+            "| source_family | non-goal guard |",
+            "| --- | --- |",
+        ]
+    )
+    for row in report.source_families:
+        lines.append(f"| {row.source_family} | {' / '.join(row.non_goal_guard)} |")
+
+    if report.phase0_status != "complete":
+        lines.extend(
+            [
+                "",
+                "## 未達理由",
+                "",
+            ]
+        )
+        if not report.coverage_source_family_goal_met:
+            lines.append(
+                "- 10 RawArtifact / SourceDocumentCandidate / EvidenceItem を満たす "
+                f"source family が {report.achieved_source_family_count} 件で、"
+                f"必要な {report.minimum_required_source_family_count} 件に届いていない。"
+            )
+        if report.missing_required_source_families:
+            lines.append(
+                "- 助成・補助金と監査 source の必須 gate のうち未達: "
+                + ", ".join(report.missing_required_source_families)
+            )
+
+    lines.extend(
+        [
+            "",
+            "## 出典",
+            "",
+            "- [Phase 0 残実装設計](phase0-remainder-implementation-design.md)",
+            "- [Phase 0 残実装ローカル issue ledger](phase0-remainder-issues.md)",
+        ]
+    )
+    return "\n".join(lines) + "\n"
