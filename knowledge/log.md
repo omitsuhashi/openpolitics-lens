@@ -359,3 +359,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `phase0-remainder-p0r-010-input-packet.json`、`phase0-remainder-p0r-010-execution-envelope.json`、`phase0-remainder-p0r-010-execution-handoff.md` を追加。dependency validation と runtime reconciliation のため、完了済み issue `P0R-001` から `P0R-009` も packet / envelope に含めた。
 - `P0R-003` head `7fb7c999aa4f67410379da2fa25a0cf248de2975` を blocker head base とし、`P0R-010` branch をそこから作る方針にした。
 - 実行対象は監査 source / `AuditFindingCandidate` fixture-only probe に限定し、live source 取得、監査指摘の評価分類、SpendingReviewSignal / PublicMoneyFlow 生成、後続 storage separation contract は非対象に残した。
+
+## [2026-07-07] implementation-result | P0R-010 audit finding candidate probe PR_READY
+
+- `P0R-010` は branch `codex/opl-phase0-remainder-20260707/P0R-010-audit-finding-candidates-probe`、head `ba3fd23e125ed1c502f1487a3b79258fd447b970` で local `PR_READY`。
+- 東京都監査 report index / report fixture、3 種類の audit `source_type` 分離、10 RawArtifact / SourceDocumentCandidate、10 EvidenceItem 以上、`AuditFindingCandidate` 5 件以上、official wording の locator / evidence trace、評価分類非生成 guard を実装した。
+- verification は `uv run pytest -q` 68 passed、`uv run ruff check .` passed、`uv run ruff format --check .` passed、`git diff --check` passed。独立レビューで Critical / Important / Minor なし。
+- fixture-only のため、live Tokyo audit retrieval、PDF download、OCR は未検証。`P0R-011` を次の実行可能 issue とし、`P0R-012` はまだ `P0R-011` 待ち。
