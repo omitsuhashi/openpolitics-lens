@@ -68,7 +68,7 @@ PR delivery は Remote Gate で扱う。最終 PR merge は常に human-only。
 - `git diff --check`: ok
 - Execution envelope schema: `3`
 - Execution envelope revision: `1`
-- `epic_base.sha`: `41cfd06d5399c34fd97977bfe013386fcd627a92`
+- `epic_base.sha`: `c870f7a1e485d62fb413c59084bb2d7cfd61640e`
 
 Observed local state:
 

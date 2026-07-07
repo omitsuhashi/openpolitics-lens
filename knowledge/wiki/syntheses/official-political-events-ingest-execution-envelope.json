@@ -4,7 +4,7 @@
   "revision": 1,
   "epic_base": {
     "ref": "codex/opl-official-political-events-20260707/epic-base",
-    "sha": "41cfd06d5399c34fd97977bfe013386fcd627a92",
+    "sha": "c870f7a1e485d62fb413c59084bb2d7cfd61640e",
     "branch_state": "create_on_run"
   },
   "execution_policy": {

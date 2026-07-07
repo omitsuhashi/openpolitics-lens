@@ -215,3 +215,7 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - 実行対象を `G2PR-008` から `G2PR-010` に限定し、execution envelope は `schema_version` 3、`local_only` とした。
 - `phase_branch_policy` を追加し、planning artifacts、epic base、issue branches、worker worktrees の ownership を分離。
 - input packet、execution envelope、capability preflight、git reservation reconcile が通過。
+
+## [2026-07-07] execution-plan | Update official political events envelope base
+
+- packet/evidence boundary commit `c870f7a1e485d62fb413c59084bb2d7cfd61640e` を `epic_base.sha` として execution envelope revision 1 に反映。
