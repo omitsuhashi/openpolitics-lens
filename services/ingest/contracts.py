@@ -61,8 +61,7 @@ def _datetime_from_json(value: object, field_name: str) -> datetime:
         raise ValueError(f"{field_name} must be a non-empty ISO-8601 string")
     normalized = value.removesuffix("Z") + "+00:00" if value.endswith("Z") else value
     parsed = datetime.fromisoformat(normalized)
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=UTC)
+    _validate_timezone_aware_datetime(parsed, field_name)
     return parsed.astimezone(UTC)
 
 
@@ -117,6 +116,19 @@ def _validate_choice(field_name: str, value: str, allowed_values: tuple[str, ...
     if value not in allowed_values:
         allowed = ", ".join(allowed_values)
         raise ValueError(f"{field_name} must be one of: {allowed}")
+
+
+def _validate_timezone_aware_datetime(value: datetime, field_name: str) -> None:
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError(f"{field_name} must be timezone-aware")
+
+
+def _validate_optional_timezone_aware_datetime(
+    value: datetime | None,
+    field_name: str,
+) -> None:
+    if value is not None:
+        _validate_timezone_aware_datetime(value, field_name)
 
 
 @dataclass(frozen=True, slots=True)
@@ -199,6 +211,7 @@ class SourceRegistryRecord:
         _validate_nullable_text(self.municipality_code, "municipality_code")
         _validate_choice("officiality_level", self.officiality_level, OFFICIALITY_LEVELS)
         _validate_choice("coverage_status", self.coverage_status, COVERAGE_STATUSES)
+        _validate_timezone_aware_datetime(self.last_verified_at, "last_verified_at")
         if (
             self.officiality_level == "non_official_reference"
             and self.coverage_status == "supported"
@@ -228,8 +241,14 @@ class SourceRegistryRecord:
             connector_status=_required_str(data, "connector_status"),
         )
 
-    def coverage_key(self) -> tuple[str, str, str]:
-        return (self.jurisdiction_id, self.source_family, self.coverage_scope)
+    def coverage_key(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.jurisdiction_id,
+            self.source_system,
+            self.source_family,
+            self.connector_id,
+            self.coverage_scope,
+        )
 
     def is_connector_execution_target(self) -> bool:
         return (
@@ -262,13 +281,19 @@ class SourceRegistryRecord:
 @dataclass(frozen=True, slots=True)
 class SourceCoverageRecord:
     jurisdiction_id: str
+    jurisdiction_level: str
+    source_system: str
     source_family: str
+    connector_id: str
+    retrieval_method: str
     coverage_scope: str
     coverage_status: CoverageStatus
     entrypoint_url: str
     last_checked_at: datetime
     last_successful_fetch_at: datetime | None
+    last_verified_at: datetime
     last_error: str | None
+    terms_note: str
     manual_notes: str
     next_action: str
 
@@ -277,22 +302,37 @@ class SourceCoverageRecord:
             self,
             (
                 "jurisdiction_id",
+                "jurisdiction_level",
+                "source_system",
                 "source_family",
+                "connector_id",
+                "retrieval_method",
                 "coverage_scope",
                 "coverage_status",
                 "entrypoint_url",
+                "terms_note",
                 "manual_notes",
                 "next_action",
             ),
         )
         _validate_choice("coverage_status", self.coverage_status, COVERAGE_STATUSES)
+        _validate_timezone_aware_datetime(self.last_checked_at, "last_checked_at")
+        _validate_optional_timezone_aware_datetime(
+            self.last_successful_fetch_at,
+            "last_successful_fetch_at",
+        )
+        _validate_timezone_aware_datetime(self.last_verified_at, "last_verified_at")
         _validate_nullable_text(self.last_error, "last_error")
 
     @classmethod
     def from_json_dict(cls, data: JsonDict) -> Self:
         return cls(
             jurisdiction_id=_required_str(data, "jurisdiction_id"),
+            jurisdiction_level=_required_str(data, "jurisdiction_level"),
+            source_system=_required_str(data, "source_system"),
             source_family=_required_str(data, "source_family"),
+            connector_id=_required_str(data, "connector_id"),
+            retrieval_method=_required_str(data, "retrieval_method"),
             coverage_scope=_required_str(data, "coverage_scope"),
             coverage_status=_required_str(data, "coverage_status"),
             entrypoint_url=_required_str(data, "entrypoint_url"),
@@ -301,24 +341,41 @@ class SourceCoverageRecord:
                 data,
                 "last_successful_fetch_at",
             ),
+            last_verified_at=_datetime_from_json(
+                data.get("last_verified_at"),
+                "last_verified_at",
+            ),
             last_error=_required_nullable_str(data, "last_error"),
+            terms_note=_required_str(data, "terms_note"),
             manual_notes=_required_str(data, "manual_notes"),
             next_action=_required_str(data, "next_action"),
         )
 
-    def coverage_key(self) -> tuple[str, str, str]:
-        return (self.jurisdiction_id, self.source_family, self.coverage_scope)
+    def coverage_key(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.jurisdiction_id,
+            self.source_system,
+            self.source_family,
+            self.connector_id,
+            self.coverage_scope,
+        )
 
     def to_json_dict(self) -> JsonDict:
         return {
             "jurisdiction_id": self.jurisdiction_id,
+            "jurisdiction_level": self.jurisdiction_level,
+            "source_system": self.source_system,
             "source_family": self.source_family,
+            "connector_id": self.connector_id,
+            "retrieval_method": self.retrieval_method,
             "coverage_scope": self.coverage_scope,
             "coverage_status": self.coverage_status,
             "entrypoint_url": self.entrypoint_url,
             "last_checked_at": _datetime_to_json(self.last_checked_at),
             "last_successful_fetch_at": _optional_datetime_to_json(self.last_successful_fetch_at),
+            "last_verified_at": _datetime_to_json(self.last_verified_at),
             "last_error": self.last_error,
+            "terms_note": self.terms_note,
             "manual_notes": self.manual_notes,
             "next_action": self.next_action,
         }
@@ -346,8 +403,15 @@ def validate_required_coverage_records(
 
 def connector_execution_targets(
     registry_records: tuple[SourceRegistryRecord, ...],
+    coverage_records: tuple[SourceCoverageRecord, ...] = (),
 ) -> tuple[SourceRegistryRecord, ...]:
-    return tuple(record for record in registry_records if record.is_connector_execution_target())
+    coverage_by_key = {record.coverage_key(): record for record in coverage_records}
+    return tuple(
+        record
+        for record in registry_records
+        if record.is_connector_execution_target()
+        and coverage_by_key.get(record.coverage_key(), record).coverage_status != "blocked_by_terms"
+    )
 
 
 @dataclass(frozen=True, slots=True)
