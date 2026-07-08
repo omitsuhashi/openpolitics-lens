@@ -16,6 +16,7 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
 - [Data Sources](data-sources.md) — 取得対象、優先順位、自治体候補、取得難度。
 - [Official Political Events Ingest Spec](wiki/syntheses/official-political-events-ingest-spec.md) — 国・地方自治体を横断して公式サイトから選挙・政治イベントを取得する source registry / event ingest 設計。
 - [Official Political Events Ingest Issues](wiki/syntheses/official-political-events-ingest-issues.md) — 公式政治イベント ingest の local issue ledger と blocker graph。
+- [Official Gazette Election Notice Feasibility](wiki/syntheses/official-gazette-election-notice-feasibility.md) — 官報を `official_notice` source として扱う条件、無料公開範囲、利用条件、PDF/OCR 未確定点を整理した feasibility。
 - [Official Political Events Ingest Execution Handoff](wiki/syntheses/official-political-events-ingest-execution-handoff.md) — `G2PR-008` から `G2PR-010` の Execution Plan Gate artifact と Remote Gate 後の draft PR 状態。
 - [Tokyo Subsidy Ingest Spec](wiki/syntheses/tokyo-subsidy-ingest-spec.md) — 東京都補助金・助成金 first の ingest 初期仕様と後続 issue 方針。
 - [Tokyo Source Connector Design](wiki/syntheses/tokyo-source-connector-design.md) — 東京都の契約・入札、予算・決算、監査、政治資金、会議録・議案 connector 設計。
@@ -64,6 +65,8 @@ OpenPolitics Lens の設計・根拠・判断履歴に辿るための discovery 
   検索語: election, political event, source registry, official source, coverage ledger, jurisdiction, 選挙, 政治イベント, 公式サイト, 自治体, 国会
 - [Official Political Events Ingest Issues](wiki/syntheses/official-political-events-ingest-issues.md) — `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の local issue ledger、初回 PR 実装範囲案、blocker graph。
   検索語: issue ledger, blocker graph, G2PR, election, meeting, coverage, source registry, イシュー, 選挙, 会議, 欠落可視化
+- [Official Gazette Election Notice Feasibility](wiki/syntheses/official-gazette-election-notice-feasibility.md) — 官報を `official_notice` として扱う条件、無料 90 日公開、paid search 制約、crawler 禁止条件、PDF/OCR 未検証項目を整理する。
+  検索語: 官報, official notice, election notice, kanpo, 公示, 告示, 公告, national election, PDF, OCR, paid search, 利用条件
 - [Official Political Events Ingest Execution Handoff](wiki/syntheses/official-political-events-ingest-execution-handoff.md) — `G2PR-008` から `G2PR-010` の normalized packet、execution envelope、dependency order、write scope、検証 evidence、Remote Gate 後の draft PR 状態。
   検索語: execution packet, execution envelope, handoff, G2PR-008, G2PR-009, G2PR-010, 実行計画, ハンドオフ, 選挙, 会議
 - [Spending Review](spending-review.md) — 補助金、契約、予算、決算、監査指摘から支出検証シグナルを作る設計。

@@ -269,3 +269,10 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `services/normalize/contracts.py` の `contracts` という名前は意味が広く、model / schema / output contract のどれを指すのかが読み取りにくいという課題を記録。
 - 現時点では実装変更せず、後続で `normalize` 配下を分割する場合に、`models`、`schemas`、`output_contracts`、`official_event_contracts` などの命名と責務境界を検討する。
 - 目的は、normalize が生成する Evidence / OfficialPoliticalEventCandidate の型保証を維持しつつ、具体的に何に使うファイルかを読み手に伝わりやすくすること。
+
+## [2026-07-08] implementation | G2PR-014 official gazette feasibility
+
+- `wiki/syntheses/official-gazette-election-notice-feasibility.md` を追加し、官報を `jp_national_election_notices` の `official_notice` source として扱う条件、無料 90 日公開、paid search 制約、crawler 禁止条件、PDF/OCR 未検証点を整理した。
+- worker packet の inline official fact を根拠に、初期 `coverage_status` は `manual_review_required` を基本とし、高頻度収集や無料範囲外 historical backfill は `blocked_by_terms` 候補として扱う判断を記録した。
+- `index.md` に feasibility synthesis の入口を追加した。
+- verification は `git diff --check` passed。
