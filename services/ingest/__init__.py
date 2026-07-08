@@ -18,6 +18,12 @@ from ingest.contracts import (
     summarize_required_coverage,
     validate_required_coverage_records,
 )
+from ingest.diet_schedule import (
+    HOUSE_OF_COUNCILLORS_DIET_SCHEDULE_CONNECTOR,
+    HOUSE_OF_REPRESENTATIVES_DIET_SCHEDULE_CONNECTOR,
+    DietScheduleConnector,
+    DietScheduleFixturePage,
+)
 from ingest.filesystem import FileSystemOutputWriter, RawArtifactWrite, content_sha256
 from ingest.object_storage import (
     ObjectStorageClient,
@@ -39,6 +45,8 @@ __all__ = [
     "CoverageStatus",
     "CoverageStatusCount",
     "DiscoveryRecord",
+    "DietScheduleConnector",
+    "DietScheduleFixturePage",
     "DuplicateSourceCoverageError",
     "FetchManifestRecord",
     "FileSystemOutputWriter",
@@ -46,6 +54,8 @@ __all__ = [
     "FakeTokyoMetroGrantsResponse",
     "FetchManifestDbRows",
     "JurisdictionProfile",
+    "HOUSE_OF_COUNCILLORS_DIET_SCHEDULE_CONNECTOR",
+    "HOUSE_OF_REPRESENTATIVES_DIET_SCHEDULE_CONNECTOR",
     "MissingSourceCoverageError",
     "ObjectStorageClient",
     "ObjectStorageOutputWriter",
