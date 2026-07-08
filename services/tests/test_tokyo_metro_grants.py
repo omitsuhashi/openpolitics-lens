@@ -120,4 +120,6 @@ def test_tokyo_metro_grants_fake_fetch_writes_raw_artifacts_and_fetch_manifest(
             "language": "ja",
             "retrieved_at": "2026-07-05T09:01:00Z",
             "raw_artifact_path": payload["raw_artifact_path"],
+            "metadata": {},
+            "warnings": [],
         }

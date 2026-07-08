@@ -212,6 +212,8 @@ def test_fetch_manifest_record_builds_db_row_payloads() -> None:
         "language": "ja",
         "retrieved_at": datetime(2026, 7, 5, 9, 1, tzinfo=UTC),
         "raw_artifact_path": record.raw_artifact_path,
+        "metadata": {},
+        "warnings": [],
     }
 
 

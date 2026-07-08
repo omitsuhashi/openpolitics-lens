@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from typing import Literal, Self
 
@@ -704,10 +704,16 @@ class NormalizeResult:
     source_document: SourceDocument
     evidence_items: tuple[EvidenceItem, ...]
     evidence_claims: tuple[EvidenceClaim, ...]
+    official_event_candidates: tuple[OfficialPoliticalEventCandidate, ...] = field(
+        default_factory=tuple
+    )
 
     def to_json_dict(self) -> JsonDict:
         return {
             "source_document": self.source_document.to_json_dict(),
             "evidence_items": [item.to_json_dict() for item in self.evidence_items],
             "evidence_claims": [claim.to_json_dict() for claim in self.evidence_claims],
+            "official_event_candidates": [
+                item.to_json_dict() for item in self.official_event_candidates
+            ],
         }

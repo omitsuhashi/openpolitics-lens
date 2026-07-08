@@ -80,6 +80,8 @@ def build_fetch_manifest_db_rows(
         "language": candidate.language,
         "retrieved_at": candidate.retrieved_at,
         "raw_artifact_path": candidate.raw_artifact_path,
+        "metadata": candidate.metadata,
+        "warnings": list(candidate.warnings),
     }
 
     return FetchManifestDbRows(

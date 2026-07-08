@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal, Self
 
@@ -688,6 +688,8 @@ class SourceDocumentCandidate:
     language: str
     retrieved_at: datetime
     raw_artifact_path: str
+    metadata: JsonDict = field(default_factory=dict)
+    warnings: tuple[str, ...] = ()
 
     def to_json_dict(self) -> JsonDict:
         return {
@@ -699,6 +701,8 @@ class SourceDocumentCandidate:
             "language": self.language,
             "retrieved_at": _datetime_to_json(self.retrieved_at),
             "raw_artifact_path": self.raw_artifact_path,
+            "metadata": self.metadata,
+            "warnings": list(self.warnings),
         }
 
 

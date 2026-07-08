@@ -137,6 +137,40 @@ def test_contract_records_serialize_with_connector_identity() -> None:
 
     assert fetch_record["source_document_candidate"]["jurisdiction_id"] == "jp-tokyo"
     assert fetch_record["source_document_candidate"]["source_family"] == "tokyo_metro_grants"
+    assert fetch_record["source_document_candidate"]["metadata"] == {}
+    assert fetch_record["source_document_candidate"]["warnings"] == []
+
+
+def test_source_document_candidate_round_trips_metadata_and_warnings() -> None:
+    candidate = SourceDocumentCandidate(
+        canonical_url="https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCMMSTDETAIL&id=495000123",
+        title="行政手続デジタル化に関する意見募集",
+        source_type="public_comment_case",
+        jurisdiction_id="jp",
+        source_family="jp_public_comment",
+        language="ja",
+        retrieved_at=datetime(2026, 7, 8, 10, 0, tzinfo=UTC),
+        raw_artifact_path="raw/jp/jp_public_comment/2026/07/" + ("c" * 64) + ".json",
+        metadata={
+            "case_id": "495000123",
+            "operator_name": "デジタル庁",
+            "comment_start_date": "2026-07-01",
+            "comment_end_text": "2026年8月",
+            "result_url": "https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCM1040&id=495000123",
+        },
+        warnings=("comment_end_date_is_month_precision",),
+    )
+
+    candidate_json = candidate.to_json_dict()
+
+    assert candidate_json["metadata"] == {
+        "case_id": "495000123",
+        "operator_name": "デジタル庁",
+        "comment_start_date": "2026-07-01",
+        "comment_end_text": "2026年8月",
+        "result_url": "https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCM1040&id=495000123",
+    }
+    assert candidate_json["warnings"] == ["comment_end_date_is_month_precision"]
 
 
 def test_source_registry_and_coverage_records_round_trip_json_contract() -> None:

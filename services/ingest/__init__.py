@@ -18,6 +18,12 @@ from ingest.contracts import (
     summarize_required_coverage,
     validate_required_coverage_records,
 )
+from ingest.egov_public_comment import (
+    EGOV_PUBLIC_COMMENT_CONNECTOR,
+    EgovPublicCommentConnector,
+    FakeEgovPublicCommentFetcher,
+    FakeEgovPublicCommentResponse,
+)
 from ingest.filesystem import FileSystemOutputWriter, RawArtifactWrite, content_sha256
 from ingest.object_storage import (
     ObjectStorageClient,
@@ -40,8 +46,12 @@ __all__ = [
     "CoverageStatusCount",
     "DiscoveryRecord",
     "DuplicateSourceCoverageError",
+    "EGOV_PUBLIC_COMMENT_CONNECTOR",
+    "EgovPublicCommentConnector",
     "FetchManifestRecord",
     "FileSystemOutputWriter",
+    "FakeEgovPublicCommentFetcher",
+    "FakeEgovPublicCommentResponse",
     "FakeTokyoMetroGrantsFetcher",
     "FakeTokyoMetroGrantsResponse",
     "FetchManifestDbRows",

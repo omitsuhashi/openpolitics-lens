@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>e-Gov パブリック・コメント</title>
+    <item>
+      <title>行政手続デジタル化に関する意見募集</title>
+      <link>https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCM1040&amp;id=495000123</link>
+      <guid>495000123</guid>
+    </item>
+    <item>
+      <title>地方行政のオンライン申請改善に関する意見募集</title>
+      <link>https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCM1040&amp;id=495000124</link>
+      <guid>495000124</guid>
+    </item>
+  </channel>
+</rss>
