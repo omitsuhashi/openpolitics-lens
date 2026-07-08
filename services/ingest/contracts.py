@@ -721,6 +721,7 @@ class FetchManifestRecord:
     byte_size: int
     raw_artifact_path: str
     source_document_candidate: SourceDocumentCandidate
+    request_url: str | None = None
     metadata: JsonDict | None = None
 
     def to_json_dict(self) -> JsonDict:
@@ -737,6 +738,8 @@ class FetchManifestRecord:
             "terms_note": self.connector.terms_note,
             "source_document_candidate": self.source_document_candidate.to_json_dict(),
         }
+        if self.request_url:
+            record["request_url"] = self.request_url
         if self.metadata:
             record["metadata"] = self.metadata
         return record

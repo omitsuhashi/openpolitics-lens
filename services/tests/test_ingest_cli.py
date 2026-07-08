@@ -175,6 +175,11 @@ def test_ndl_diet_minutes_fixture_cli_writes_json_and_xml_manifests(
         "meeting_record",
         "speech_record",
     ]
+    assert fetched[0]["canonical_url"] == "https://kokkai.ndl.go.jp/txt/100105254X00120240415/1"
+    assert (
+        fetched[0]["request_url"]
+        == "https://kokkai.ndl.go.jp/api/meeting/100105254X00120240415_001"
+    )
     assert fetched[0]["source_document_candidate"]["metadata"]["publication_date"] == "2024-04-20"
     assert fetched[1]["source_document_candidate"]["metadata"]["speech_id"] == "0001"
 

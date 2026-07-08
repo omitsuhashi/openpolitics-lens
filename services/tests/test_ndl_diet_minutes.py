@@ -79,12 +79,28 @@ def test_ndl_diet_minutes_fixture_connector_discovers_fetches_and_normalizes(
         "application/json; charset=utf-8",
         "application/xml; charset=utf-8",
     ]
+    assert fetched[0].canonical_url == "https://kokkai.ndl.go.jp/txt/100105254X00120240415/1"
+    assert (
+        fetched[0].request_url == "https://kokkai.ndl.go.jp/api/meeting/100105254X00120240415_001"
+    )
     assert fetched[0].source_document_candidate.metadata["record_id"] == "100105254X00120240415_001"
     assert fetched[0].source_document_candidate.metadata["meeting_date"] == "2024-04-15"
     assert fetched[0].source_document_candidate.metadata["publication_date"] == "2024-04-20"
+    assert (
+        fetched[0].source_document_candidate.canonical_url
+        == "https://kokkai.ndl.go.jp/txt/100105254X00120240415/1"
+    )
     assert fetched[1].source_document_candidate.metadata["speech_id"] == "0001"
 
     meeting_rows = ingest.build_fetch_manifest_db_rows(fetched[0], object_bucket="ingest-raw")
+    assert (
+        meeting_rows.raw_artifact["canonical_url"]
+        == "https://kokkai.ndl.go.jp/txt/100105254X00120240415/1"
+    )
+    assert (
+        meeting_rows.raw_artifact["request_url"]
+        == "https://kokkai.ndl.go.jp/api/meeting/100105254X00120240415_001"
+    )
     meeting_result = normalize.normalize_ndl_diet_minutes_record(
         fetched[0],
         MEETING_FIXTURE_PATH.read_bytes(),

@@ -70,6 +70,8 @@ def build_fetch_manifest_db_rows(
         "rate_limit_policy": record.connector.rate_limit_policy,
         "terms_note": record.connector.terms_note,
     }
+    if record.request_url:
+        raw_artifact["request_url"] = record.request_url
     source_document_candidate = {
         "raw_artifact_id": raw_artifact_id,
         "canonical_url": candidate.canonical_url,

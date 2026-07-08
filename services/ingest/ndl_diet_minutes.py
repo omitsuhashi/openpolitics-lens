@@ -223,8 +223,11 @@ class NdlDietMinutesConnector:
                 extension=_extension_from_media_type(response.media_type),
             )
             candidate_metadata = self._build_candidate_metadata(candidate, response.content)
+            canonical_url = candidate_metadata.get("canonical_url", candidate.canonical_url)
+            if not isinstance(canonical_url, str) or not canonical_url.strip():
+                raise ValueError("canonical_url must be a non-empty string")
             source_document_candidate = SourceDocumentCandidate(
-                canonical_url=candidate.canonical_url,
+                canonical_url=canonical_url,
                 title=candidate.title,
                 source_type=(
                     "meeting_record"
@@ -240,7 +243,8 @@ class NdlDietMinutesConnector:
             )
             record = FetchManifestRecord(
                 connector=self.definition,
-                canonical_url=candidate.canonical_url,
+                canonical_url=canonical_url,
+                request_url=candidate.canonical_url,
                 fetched_at=fetched_at,
                 http_status=response.http_status,
                 content_hash=raw_artifact.content_hash,
