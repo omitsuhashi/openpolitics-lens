@@ -263,3 +263,9 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 - `services/normalize/contracts.py` に family 別 event type validation を追加し、typo、scope 外 event、cross-family event type を拒否する test を追加。
 - `official-political-events-ingest-execution-handoff.md` と `index.md` を Remote Gate 後の execution envelope revision 2 / draft PR #2 状態に更新。
 - verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 80 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+
+## [2026-07-08] note | Normalize contract naming follow-up
+
+- `services/normalize/contracts.py` の `contracts` という名前は意味が広く、model / schema / output contract のどれを指すのかが読み取りにくいという課題を記録。
+- 現時点では実装変更せず、後続で `normalize` 配下を分割する場合に、`models`、`schemas`、`output_contracts`、`official_event_contracts` などの命名と責務境界を検討する。
+- 目的は、normalize が生成する Evidence / OfficialPoliticalEventCandidate の型保証を維持しつつ、具体的に何に使うファイルかを読み手に伝わりやすくすること。
