@@ -7,7 +7,7 @@ from normalize.contracts import (
     SourceDocument,
     event_date_conflict_assertion,
 )
-from normalize.normalizer import normalize_grant_program_page
+from normalize.normalizer import normalize_grant_program_page, normalize_ndl_diet_minutes_record
 
 __all__ = [
     "EvidenceClaim",
@@ -18,4 +18,5 @@ __all__ = [
     "SourceDocument",
     "event_date_conflict_assertion",
     "normalize_grant_program_page",
+    "normalize_ndl_diet_minutes_record",
 ]

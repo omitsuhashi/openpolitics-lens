@@ -704,10 +704,12 @@ class NormalizeResult:
     source_document: SourceDocument
     evidence_items: tuple[EvidenceItem, ...]
     evidence_claims: tuple[EvidenceClaim, ...]
+    event_candidates: tuple[OfficialPoliticalEventCandidate, ...] = ()
 
     def to_json_dict(self) -> JsonDict:
         return {
             "source_document": self.source_document.to_json_dict(),
             "evidence_items": [item.to_json_dict() for item in self.evidence_items],
             "evidence_claims": [claim.to_json_dict() for claim in self.evidence_claims],
+            "event_candidates": [candidate.to_json_dict() for candidate in self.event_candidates],
         }

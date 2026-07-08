@@ -4,6 +4,9 @@ import sys
 from pathlib import Path
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "tokyo_metro_grants_index.html"
+NDL_SEARCH_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ndl_diet_minutes_search.json"
+NDL_MEETING_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ndl_diet_minutes_meeting.json"
+NDL_SPEECH_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "ndl_diet_minutes_speech.xml"
 
 
 def test_tokyo_metro_grants_fixture_cli_writes_manifests_and_raw_artifact(
@@ -115,6 +118,79 @@ def test_tokyo_metro_grants_run_is_reserved_for_future_live_ingest(
             str(tmp_path),
             "--run-id",
             "daily-run",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "live ingest is not implemented yet" in result.stderr
+
+
+def test_ndl_diet_minutes_fixture_cli_writes_json_and_xml_manifests(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "ndl-diet-minutes",
+            "fixture",
+            "--search-json",
+            str(NDL_SEARCH_FIXTURE_PATH),
+            "--meeting-json",
+            str(NDL_MEETING_FIXTURE_PATH),
+            "--speech-xml",
+            str(NDL_SPEECH_FIXTURE_PATH),
+            "--output-dir",
+            str(tmp_path),
+            "--run-id",
+            "ndl-cli-fixture-run",
+            "--discovered-at",
+            "2026-07-08T01:00:00Z",
+            "--fetched-at",
+            "2026-07-08T01:01:00Z",
+        ],
+        capture_output=True,
+        check=False,
+        cwd=Path(__file__).resolve().parents[1],
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+    discovered_path = tmp_path / "manifests" / "ndl-cli-fixture-run" / "discovered.jsonl"
+    fetched_path = tmp_path / "manifests" / "ndl-cli-fixture-run" / "fetched.jsonl"
+    discovered = [json.loads(line) for line in discovered_path.read_text().splitlines()]
+    fetched = [json.loads(line) for line in fetched_path.read_text().splitlines()]
+
+    assert [record["candidate_type"] for record in discovered] == [
+        "meeting_record_candidate",
+        "speech_record_candidate",
+    ]
+    assert [record["source_document_candidate"]["source_type"] for record in fetched] == [
+        "meeting_record",
+        "speech_record",
+    ]
+    assert fetched[0]["source_document_candidate"]["metadata"]["publication_date"] == "2024-04-20"
+    assert fetched[1]["source_document_candidate"]["metadata"]["speech_id"] == "0001"
+
+
+def test_ndl_diet_minutes_run_is_reserved_for_future_live_ingest(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "ingest",
+            "ndl-diet-minutes",
+            "run",
+            "--output-dir",
+            str(tmp_path),
+            "--run-id",
+            "ndl-daily-run",
         ],
         capture_output=True,
         check=False,

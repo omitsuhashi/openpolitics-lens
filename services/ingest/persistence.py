@@ -81,6 +81,8 @@ def build_fetch_manifest_db_rows(
         "retrieved_at": candidate.retrieved_at,
         "raw_artifact_path": candidate.raw_artifact_path,
     }
+    if candidate.metadata:
+        source_document_candidate["metadata"] = candidate.metadata
 
     return FetchManifestDbRows(
         raw_artifact=raw_artifact,

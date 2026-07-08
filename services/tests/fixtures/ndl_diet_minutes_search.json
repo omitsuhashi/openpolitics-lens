@@ -1,0 +1,31 @@
+{
+  "numberOfRecords": 1,
+  "numberOfReturn": 1,
+  "startRecord": 1,
+  "nextRecordPosition": 2,
+  "maximumRecords": 10,
+  "request": {
+    "sessionFrom": 217,
+    "sessionTo": 217,
+    "nameOfMeeting": "総務委員会"
+  },
+  "rateLimit": "1 request per second",
+  "records": [
+    {
+      "recordId": "100105254X00120240415_001",
+      "nameOfHouse": "衆議院",
+      "nameOfMeeting": "総務委員会",
+      "issue": "第1号",
+      "meetingDate": "2024-04-15",
+      "meetingApiUrl": "https://kokkai.ndl.go.jp/api/meeting/100105254X00120240415_001",
+      "speechRecord": [
+        {
+          "speechId": "0001",
+          "speechOrder": 1,
+          "speaker": "山田太郎",
+          "speechApiUrl": "https://kokkai.ndl.go.jp/api/speech/0001.xml"
+        }
+      ]
+    }
+  ]
+}

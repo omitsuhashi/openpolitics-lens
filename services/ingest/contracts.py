@@ -664,9 +664,10 @@ class DiscoveryRecord:
     title: str
     matched_keywords: tuple[str, ...]
     relevance_reason: str
+    metadata: JsonDict | None = None
 
     def to_json_dict(self) -> JsonDict:
-        return {
+        record = {
             **self.connector.identity_json_dict(),
             "canonical_url": self.canonical_url,
             "discovered_at": _datetime_to_json(self.discovered_at),
@@ -676,6 +677,9 @@ class DiscoveryRecord:
             "matched_keywords": list(self.matched_keywords),
             "relevance_reason": self.relevance_reason,
         }
+        if self.metadata:
+            record["metadata"] = self.metadata
+        return record
 
 
 @dataclass(frozen=True, slots=True)
@@ -688,9 +692,10 @@ class SourceDocumentCandidate:
     language: str
     retrieved_at: datetime
     raw_artifact_path: str
+    metadata: JsonDict | None = None
 
     def to_json_dict(self) -> JsonDict:
-        return {
+        record = {
             "canonical_url": self.canonical_url,
             "title": self.title,
             "source_type": self.source_type,
@@ -700,6 +705,9 @@ class SourceDocumentCandidate:
             "retrieved_at": _datetime_to_json(self.retrieved_at),
             "raw_artifact_path": self.raw_artifact_path,
         }
+        if self.metadata:
+            record["metadata"] = self.metadata
+        return record
 
 
 @dataclass(frozen=True, slots=True)
@@ -713,9 +721,10 @@ class FetchManifestRecord:
     byte_size: int
     raw_artifact_path: str
     source_document_candidate: SourceDocumentCandidate
+    metadata: JsonDict | None = None
 
     def to_json_dict(self) -> JsonDict:
-        return {
+        record = {
             **self.connector.identity_json_dict(),
             "canonical_url": self.canonical_url,
             "fetched_at": _datetime_to_json(self.fetched_at),
@@ -728,3 +737,6 @@ class FetchManifestRecord:
             "terms_note": self.connector.terms_note,
             "source_document_candidate": self.source_document_candidate.to_json_dict(),
         }
+        if self.metadata:
+            record["metadata"] = self.metadata
+        return record

@@ -19,6 +19,12 @@ from ingest.contracts import (
     validate_required_coverage_records,
 )
 from ingest.filesystem import FileSystemOutputWriter, RawArtifactWrite, content_sha256
+from ingest.ndl_diet_minutes import (
+    NDL_DIET_MINUTES_CONNECTOR,
+    FakeNdlDietMinutesFetcher,
+    FakeNdlDietMinutesResponse,
+    NdlDietMinutesConnector,
+)
 from ingest.object_storage import (
     ObjectStorageClient,
     ObjectStorageOutputWriter,
@@ -40,6 +46,8 @@ __all__ = [
     "CoverageStatusCount",
     "DiscoveryRecord",
     "DuplicateSourceCoverageError",
+    "FakeNdlDietMinutesFetcher",
+    "FakeNdlDietMinutesResponse",
     "FetchManifestRecord",
     "FileSystemOutputWriter",
     "FakeTokyoMetroGrantsFetcher",
@@ -47,6 +55,8 @@ __all__ = [
     "FetchManifestDbRows",
     "JurisdictionProfile",
     "MissingSourceCoverageError",
+    "NDL_DIET_MINUTES_CONNECTOR",
+    "NdlDietMinutesConnector",
     "ObjectStorageClient",
     "ObjectStorageOutputWriter",
     "ObjectStorageWrite",

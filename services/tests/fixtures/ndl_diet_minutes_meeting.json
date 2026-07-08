@@ -1,0 +1,12 @@
+{
+  "recordId": "100105254X00120240415_001",
+  "nameOfHouse": "衆議院",
+  "nameOfMeeting": "総務委員会",
+  "issue": "第1号",
+  "meetingDate": "2024-04-15",
+  "issueDate": "2024-04-20",
+  "meetingRecordUrl": "https://kokkai.ndl.go.jp/txt/100105254X00120240415/1",
+  "meetingApiUrl": "https://kokkai.ndl.go.jp/api/meeting/100105254X00120240415_001",
+  "searchApiUrl": "https://kokkai.ndl.go.jp/api/meeting?sessionFrom=217&sessionTo=217&nameOfMeeting=%E7%B7%8F%E5%8B%99%E5%A7%94%E5%93%A1%E4%BC%9A",
+  "speechCount": 1
+}
