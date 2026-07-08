@@ -1,17 +1,70 @@
 import hashlib
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
+import ingest
 from ingest import (
     ConnectorDefinition,
     DiscoveryRecord,
     FetchManifestRecord,
     FileSystemOutputWriter,
     JurisdictionProfile,
+    MissingSourceCoverageError,
+    SourceCoverageRecord,
     SourceDocumentCandidate,
     SourceFamily,
+    SourceRegistryRecord,
+    connector_execution_targets,
+    validate_required_coverage_records,
 )
+
+
+def _diet_schedule_registry_record() -> SourceRegistryRecord:
+    return SourceRegistryRecord(
+        jurisdiction_id="jp",
+        jurisdiction_level="country",
+        country_code="JP",
+        subdivision_code=None,
+        municipality_code=None,
+        source_system="house_of_representatives",
+        source_family="jp_diet_schedule",
+        connector_id="jp.diet_schedule.v1",
+        officiality_level="official_primary",
+        operator_name="衆議院",
+        entrypoint_url="https://www.shugiin.go.jp/internet/itdb_annai.nsf/html/statics/",
+        retrieval_method="static_html_index",
+        coverage_scope="diet_meeting_schedule",
+        coverage_status="source_identified",
+        rate_limit_policy="fixture only until live acquisition gate approval",
+        terms_note="official website public pages",
+        last_verified_at=datetime(2026, 7, 7, 9, 0, tzinfo=UTC),
+        connector_status="planned",
+    )
+
+
+def _coverage_record_for(registry: SourceRegistryRecord) -> SourceCoverageRecord:
+    return SourceCoverageRecord(
+        jurisdiction_id=registry.jurisdiction_id,
+        jurisdiction_level=registry.jurisdiction_level,
+        source_system=registry.source_system,
+        source_family=registry.source_family,
+        connector_id=registry.connector_id,
+        retrieval_method=registry.retrieval_method,
+        coverage_scope=registry.coverage_scope,
+        coverage_status=registry.coverage_status,
+        entrypoint_url=registry.entrypoint_url,
+        last_checked_at=datetime(2026, 7, 7, 9, 5, tzinfo=UTC),
+        last_successful_fetch_at=None,
+        last_verified_at=registry.last_verified_at,
+        last_error=None,
+        terms_note=registry.terms_note,
+        manual_notes="公式入口は特定済み。fixture connector は後続 issue。",
+        next_action="G2PR-012 で fixture connector を追加する",
+    )
 
 
 def test_contract_records_serialize_with_connector_identity() -> None:
@@ -84,6 +137,306 @@ def test_contract_records_serialize_with_connector_identity() -> None:
 
     assert fetch_record["source_document_candidate"]["jurisdiction_id"] == "jp-tokyo"
     assert fetch_record["source_document_candidate"]["source_family"] == "tokyo_metro_grants"
+
+
+def test_source_registry_and_coverage_records_round_trip_json_contract() -> None:
+    registry = _diet_schedule_registry_record()
+    coverage = _coverage_record_for(registry)
+
+    registry_json = registry.to_json_dict()
+    coverage_json = coverage.to_json_dict()
+
+    registry_jsonl_line = json.dumps(registry_json, ensure_ascii=False)
+    coverage_jsonl_line = json.dumps(coverage_json, ensure_ascii=False)
+
+    assert registry_json["officiality_level"] == "official_primary"
+    assert registry_json["coverage_status"] == "source_identified"
+    assert registry_json["last_verified_at"] == "2026-07-07T09:00:00Z"
+    assert coverage_json["source_system"] == "house_of_representatives"
+    assert coverage_json["connector_id"] == "jp.diet_schedule.v1"
+    assert coverage_json["coverage_status"] == "source_identified"
+    assert coverage_json["last_verified_at"] == "2026-07-07T09:00:00Z"
+    assert coverage_json["last_successful_fetch_at"] is None
+    assert SourceRegistryRecord.from_json_dict(registry_json) == registry
+    assert SourceCoverageRecord.from_json_dict(coverage_json) == coverage
+    assert SourceRegistryRecord.from_json_dict(json.loads(registry_jsonl_line)) == registry
+    assert SourceCoverageRecord.from_json_dict(json.loads(coverage_jsonl_line)) == coverage
+
+
+def test_source_registry_and_coverage_records_reject_unknown_contract_values() -> None:
+    registry_json = _diet_schedule_registry_record().to_json_dict()
+    coverage_json = _coverage_record_for(_diet_schedule_registry_record()).to_json_dict()
+
+    with pytest.raises(ValueError, match="officiality_level"):
+        SourceRegistryRecord.from_json_dict(
+            {**registry_json, "officiality_level": "non_official_primary"}
+        )
+
+    with pytest.raises(ValueError, match="coverage_status"):
+        SourceCoverageRecord.from_json_dict({**coverage_json, "coverage_status": "complete"})
+
+
+def test_source_registry_and_coverage_records_require_contract_fields() -> None:
+    registry_json = _diet_schedule_registry_record().to_json_dict()
+    coverage_json = _coverage_record_for(_diet_schedule_registry_record()).to_json_dict()
+    del registry_json["connector_id"]
+    del coverage_json["last_checked_at"]
+
+    with pytest.raises(ValueError, match="connector_id"):
+        SourceRegistryRecord.from_json_dict(registry_json)
+
+    with pytest.raises(ValueError, match="last_checked_at"):
+        SourceCoverageRecord.from_json_dict(coverage_json)
+
+
+def test_election_and_meeting_source_families_require_coverage_records() -> None:
+    registry = _diet_schedule_registry_record()
+
+    with pytest.raises(MissingSourceCoverageError, match="jp.diet_schedule.v1"):
+        validate_required_coverage_records((registry,), ())
+
+    validate_required_coverage_records((registry,), (_coverage_record_for(registry),))
+
+
+def test_coverage_records_do_not_satisfy_different_source_system_or_connector() -> None:
+    house_registry = _diet_schedule_registry_record()
+    council_registry = replace(
+        house_registry,
+        source_system="house_of_councillors",
+        connector_id="jp.diet_schedule.councillors.v1",
+        operator_name="参議院",
+    )
+    house_coverage = SourceCoverageRecord(
+        jurisdiction_id=house_registry.jurisdiction_id,
+        jurisdiction_level=house_registry.jurisdiction_level,
+        source_system=house_registry.source_system,
+        source_family=house_registry.source_family,
+        connector_id=house_registry.connector_id,
+        retrieval_method=house_registry.retrieval_method,
+        coverage_scope=house_registry.coverage_scope,
+        coverage_status=house_registry.coverage_status,
+        entrypoint_url=house_registry.entrypoint_url,
+        last_checked_at=datetime(2026, 7, 7, 9, 5, tzinfo=UTC),
+        last_successful_fetch_at=None,
+        last_verified_at=house_registry.last_verified_at,
+        last_error=None,
+        terms_note=house_registry.terms_note,
+        manual_notes="衆議院側の入口だけを確認済み",
+        next_action="参議院側の coverage record は別途必要",
+    )
+
+    validate_required_coverage_records((house_registry,), (house_coverage,))
+    with pytest.raises(MissingSourceCoverageError, match="jp.diet_schedule.councillors.v1"):
+        validate_required_coverage_records((house_registry, council_registry), (house_coverage,))
+
+
+def test_required_coverage_summary_surfaces_known_unfetched_and_missing_sources() -> None:
+    identified_registry = _diet_schedule_registry_record()
+    missing_registry = replace(
+        identified_registry,
+        source_system="municipality_election_commission",
+        source_family="jp_municipality_election_schedules",
+        connector_id="jp_municipality.election_schedule.discovery_needed.v1",
+        coverage_scope="municipality_election_schedule",
+        coverage_status="source_missing",
+        entrypoint_url="unknown",
+        retrieval_method="manual_source_discovery_required",
+        connector_status="source_discovery_required",
+    )
+    blocked_registry = replace(
+        identified_registry,
+        connector_id="jp.diet_schedule.terms-blocked.v1",
+        coverage_scope="diet_meeting_schedule_blocked",
+        coverage_status="blocked_by_terms",
+        connector_status="blocked",
+        terms_note="利用条件上、自動取得対象から外す",
+    )
+    coverage_records = (
+        _coverage_record_for(identified_registry),
+        replace(
+            _coverage_record_for(missing_registry),
+            coverage_status="source_missing",
+            last_error="official source not identified",
+            manual_notes="公式 source 未特定。未取得だが gap として把握済み。",
+            next_action="手動確認で公式入口を特定する",
+        ),
+        replace(
+            _coverage_record_for(blocked_registry),
+            coverage_status="blocked_by_terms",
+            manual_notes="利用条件上、自動取得を止める",
+            next_action="利用条件の確認後に再評価する",
+        ),
+    )
+
+    summary = ingest.summarize_required_coverage(
+        (identified_registry, missing_registry, blocked_registry),
+        coverage_records,
+    )
+
+    assert summary.has_all_required_coverage_records is True
+    assert summary.is_complete is False
+    assert summary.status_count("source_identified") == 1
+    assert summary.status_count("source_missing") == 1
+    assert summary.status_count("blocked_by_terms") == 1
+    assert summary.to_json_dict()["status_counts"]["manual_review_required"] == 0
+    assert summary.missing_coverage_keys == ()
+    assert set(summary.coverage_gap_keys) == {record.coverage_key() for record in coverage_records}
+
+
+def test_required_coverage_summary_keeps_missing_coverage_from_being_complete() -> None:
+    registry = _diet_schedule_registry_record()
+
+    summary = ingest.summarize_required_coverage((registry,), ())
+
+    assert summary.has_all_required_coverage_records is False
+    assert summary.is_complete is False
+    assert summary.missing_coverage_keys == (registry.coverage_key(),)
+    assert summary.to_json_dict()["missing_coverage_keys"] == [list(registry.coverage_key())]
+
+
+def test_required_coverage_summary_keeps_empty_required_registry_incomplete() -> None:
+    summary = ingest.summarize_required_coverage((), ())
+
+    assert summary.required_source_count == 0
+    assert summary.has_all_required_coverage_records is False
+    assert summary.is_complete is False
+    assert summary.to_json_dict()["required_registry_configured"] is False
+
+
+def test_duplicate_coverage_records_are_rejected_for_deterministic_summaries() -> None:
+    registry = _diet_schedule_registry_record()
+    coverage = _coverage_record_for(registry)
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        ingest.summarize_required_coverage((registry,), (coverage, coverage))
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        validate_required_coverage_records((registry,), (coverage, coverage))
+
+
+def test_duplicate_registry_records_are_rejected_for_deterministic_summaries() -> None:
+    registry = _diet_schedule_registry_record()
+    duplicate_registry = replace(
+        registry,
+        operator_name="重複した運用者名",
+        connector_status="planned_duplicate",
+    )
+    coverage = _coverage_record_for(registry)
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        ingest.summarize_required_coverage((registry, duplicate_registry), (coverage,))
+
+    with pytest.raises(ingest.DuplicateSourceCoverageError, match="jp.diet_schedule.v1"):
+        validate_required_coverage_records((registry, duplicate_registry), (coverage,))
+
+
+def test_fetch_and_parser_failures_are_preserved_as_manual_review_coverage() -> None:
+    registry = replace(
+        _diet_schedule_registry_record(),
+        coverage_status="supported",
+        connector_status="fixture_ready",
+    )
+
+    fetch_failure = ingest.source_coverage_failure_record(
+        registry,
+        failure_kind="fetch_failure",
+        checked_at=datetime(2026, 7, 7, 10, 0, tzinfo=UTC),
+        error="HTTP 503 from fixture fetcher",
+        next_action="fixture を確認し、再取得する",
+    )
+    parser_failure = ingest.source_coverage_failure_record(
+        registry,
+        failure_kind="parser_failure",
+        checked_at=datetime(2026, 7, 7, 10, 5, tzinfo=UTC),
+        error="schedule table header changed",
+        next_action="parser selector を更新する",
+    )
+
+    assert fetch_failure.coverage_status == "manual_review_required"
+    assert fetch_failure.last_successful_fetch_at is None
+    assert fetch_failure.last_error == "fetch_failure: HTTP 503 from fixture fetcher"
+    assert "silent drop" in fetch_failure.manual_notes
+    assert parser_failure.last_error == "parser_failure: schedule table header changed"
+
+    summary = ingest.summarize_required_coverage((registry,), (fetch_failure,))
+    assert summary.status_count("manual_review_required") == 1
+    assert summary.is_complete is False
+
+
+def test_zero_observed_events_does_not_claim_event_absence() -> None:
+    registry = replace(
+        _diet_schedule_registry_record(),
+        coverage_status="supported",
+        connector_status="fixture_ready",
+    )
+    coverage = replace(
+        _coverage_record_for(registry),
+        coverage_status="supported",
+        last_successful_fetch_at=datetime(2026, 7, 7, 9, 10, tzinfo=UTC),
+        manual_notes="対象 source を確認したが fixture では event 候補 0 件",
+        next_action="次回 run でも coverage ledger と一緒に確認する",
+    )
+
+    summary = ingest.summarize_required_coverage((registry,), (coverage,), observed_event_count=0)
+
+    assert summary.is_complete is True
+    assert summary.observed_event_count == 0
+    assert summary.no_events_claimed is False
+    assert summary.to_json_dict()["event_absence_claim"] == "not_asserted"
+
+
+def test_non_official_reference_cannot_be_supported_connector_source() -> None:
+    with pytest.raises(ValueError, match="non_official_reference"):
+        replace(
+            _diet_schedule_registry_record(),
+            officiality_level="non_official_reference",
+            coverage_status="supported",
+        )
+
+
+def test_blocked_by_terms_sources_are_not_connector_execution_targets() -> None:
+    supported = replace(
+        _diet_schedule_registry_record(),
+        coverage_status="supported",
+        connector_status="fixture_ready",
+    )
+    blocked = replace(
+        _diet_schedule_registry_record(),
+        connector_id="jp.diet_schedule.blocked.v1",
+        coverage_status="blocked_by_terms",
+        connector_status="blocked",
+        terms_note="利用条件上、自動取得対象から外す",
+    )
+
+    assert connector_execution_targets((supported, blocked)) == (supported,)
+
+
+def test_coverage_blocked_by_terms_sources_are_not_connector_execution_targets() -> None:
+    registry = replace(
+        _diet_schedule_registry_record(),
+        coverage_status="supported",
+        connector_status="fixture_ready",
+    )
+    coverage = replace(_coverage_record_for(registry), coverage_status="blocked_by_terms")
+
+    assert connector_execution_targets((registry,), (coverage,)) == ()
+
+
+def test_source_registry_and_coverage_records_reject_naive_datetimes() -> None:
+    registry = _diet_schedule_registry_record()
+
+    with pytest.raises(ValueError, match="last_verified_at"):
+        replace(registry, last_verified_at=datetime(2026, 7, 7, 9, 0))
+
+    with pytest.raises(ValueError, match="last_checked_at"):
+        replace(_coverage_record_for(registry), last_checked_at=datetime(2026, 7, 7, 9, 5))
+
+    with pytest.raises(ValueError, match="last_successful_fetch_at"):
+        replace(
+            _coverage_record_for(registry),
+            coverage_status="supported",
+            last_successful_fetch_at=datetime(2026, 7, 7, 9, 10),
+        )
 
 
 def test_filesystem_writer_uses_stable_content_hash_and_partitioned_raw_path(

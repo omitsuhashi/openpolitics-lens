@@ -182,3 +182,90 @@ append-only で使う。verified claim、canonical page、`index.md`、draft dec
 
 - code review 指摘に従い、ingest input packet と follow-up input packet の `approved_hash` を現行 `tokyo-subsidy-ingest-spec.md` の hash に更新。
 - `G2PR-003` の input packet acceptance criteria を `tokyo-metro-grants fixture` / `run` 分離と `--live` 廃止後の CLI 方針へ揃えた。
+
+## [2026-07-07] design | Official political events ingest spec draft
+
+- `wiki/syntheses/official-political-events-ingest-spec.md` を追加し、`OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Spec Gate draft を作成。
+- 国・都道府県・市区町村を横断する選挙・政治イベント取得を、単一 API ではなく source registry、coverage ledger、source family connector 群として設計する方針を記録。
+- `OfficialPoliticalEventCandidate`、`EventSourceAssertion`、`SourceCoverageRecord`、`officiality_level`、`coverage_status`、fixture-first / live-gated acquisition を採用判断として記録。
+- `index.md` に公式政治イベント取得設計への入口を追加。
+
+## [2026-07-07] gate | Approve official political events ingest spec
+
+- `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Spec Gate を承認済みに更新。
+- 承認範囲は、選挙と会議を必須 coverage target とし、未対応 source、未確認 jurisdiction、検索 UI 依存、PDF 依存、取得失敗を黙って欠落させず `SourceCoverageRecord` に残す方針。
+- 「全国横断の単一 API」ではなく、source registry、coverage ledger、source family connector 群で漏れを可視化しながら取得対象を広げる設計を承認。
+
+## [2026-07-07] issue-gate | Draft official political events local issue ledger
+
+- `wiki/syntheses/official-political-events-ingest-issues.md` を追加し、`OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の local issue ledger draft を作成。
+- `G2PR-008` から `G2PR-010` を初回 PR 実装範囲案、`G2PR-011` から `G2PR-018` を後続 issue として記録。
+- 選挙と会議を必須 coverage target とし、source registry、coverage ledger、event assertion conflict、未取得 gap を silent omission しない blocker graph に分解。
+- `index.md` に local issue ledger の catalog entry を追加。
+
+## [2026-07-07] gate | Approve official political events local issues
+
+- `OPL-OFFICIAL-POLITICAL-EVENTS-20260707` の Issue Gate を承認済みに更新。
+- `G2PR-008` から `G2PR-010` を初回 PR 実装範囲、`G2PR-011` から `G2PR-018` を後続 issue として承認。
+- `G2PR-008` のみを直ちに実行可能とし、`G2PR-009` 以降は blocker graph に従って実行する。
+
+## [2026-07-07] execution-plan | Draft official political events packet
+
+- `official-political-events-ingest-input-packet.json`, `official-political-events-ingest-execution-envelope.json`, `official-political-events-ingest-execution-handoff.md` を追加。
+- 実行対象を `G2PR-008` から `G2PR-010` に限定し、execution envelope は `schema_version` 3、`local_only` とした。
+- `phase_branch_policy` を追加し、planning artifacts、epic base、issue branches、worker worktrees の ownership を分離。
+- input packet、execution envelope、capability preflight、git reservation reconcile が通過。
+
+## [2026-07-07] execution-plan | Update official political events envelope base
+
+- packet/evidence boundary commit `c870f7a1e485d62fb413c59084bb2d7cfd61640e` を `epic_base.sha` として execution envelope revision 1 に反映。
+
+## [2026-07-07] implementation | G2PR-008 source registry coverage ledger
+
+- `G2PR-008` の worker 実装を review gate に通し、worker head `0e999ad6ae539d6a944aa3b674907797da57b5da` を `PR_READY` として記録。
+- `SourceRegistryRecord` / `SourceCoverageRecord`、`officiality_level`、`coverage_status`、coverage identity key、required coverage guard、connector execution target helper、timezone-aware datetime validation を追加。
+- 初回レビューで coverage ledger の source identity 不足、`blocked_by_terms` 判定の registry 依存、naive datetime round-trip の不安定性が指摘され、修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 51 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- `G2PR-008` の review approval により `G2PR-009` を実行可能にした。G2PR-010 では同一 coverage key の重複 record の扱いを明示する。
+
+## [2026-07-07] implementation | G2PR-009 official event normalize contract
+
+- `G2PR-009` の worker 実装を review gate に通し、worker head `8bc2eaf94adf8bb014ac8d28967ba46ba452c552` を `PR_READY` として記録。
+- `OfficialPoliticalEventCandidate` / `EventSourceAssertion` を追加し、選挙・会議 event candidate を EvidenceItem に戻れる source assertion contract として表現した。
+- 複数 assertion、`date_mismatch` / `title_mismatch` / `status_mismatch`、EvidenceItem 必須 validation、VotePosition 非生成方針の regression test を追加した。
+- 初回レビューで conflict state と top-level event 値の整合性不足が指摘され、修正 cycle で `scheduled_date` / `title` / `event_status` の assertion 値と mismatch state の validation を追加した。修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 63 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- `G2PR-009` の review approval により `G2PR-010` を実行可能にした。
+
+## [2026-07-07] implementation | G2PR-010 election meeting coverage guard
+
+- `G2PR-010` の worker 実装を review gate に通し、worker head `2c7fd544d5fb9c4686a1200f023b6f4890f1da80` を `PR_READY` として記録。
+- 必須 coverage summary helper、missing guard、coverage status counts、duplicate `coverage_key` rejection、fetch/parser failure coverage record helper、date conflict assertion helper、0件 event を event absence と断定しない contract を追加した。
+- 初回レビューで empty registry の complete 誤判定と registry 側 duplicate `coverage_key` 未検出が指摘され、修正 cycle で `required_registry_configured` と registry duplicate guard を追加した。修正後レビューで Critical / Important / Minor なし。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 71 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+- 初回 PR 範囲 `G2PR-008` から `G2PR-010` はすべて local `PR_READY`。remote write / push / PR 作成は local-only policy により未実施。
+
+## [2026-07-07] delivery | Approve official political events draft PR
+
+- ユーザーの `PR作成までお願いします。` により、execution envelope revision 2 で remote write policy を `per_action` に更新。
+- 承認 remote action は `final_pr_push_head` と `final_pr_create_draft` に限定する。
+- PR は draft とし、final merge は human-only のまま扱う。
+
+## [2026-07-07] delivery | Create official political events draft PR
+
+- 統合 branch `codex/opl-official-political-events-20260707/final-pr` を `origin` に push。
+- GitHub draft PR [#2](https://github.com/omitsuhashi/openpolitics-lens/pull/2) を `main` 向けに作成。
+- local ledger の `G2PR-008`、`G2PR-009`、`G2PR-010` の PR 欄を draft PR #2 に更新。
+
+## [2026-07-07] review-fix | Align official event taxonomy and handoff state
+
+- PR-level implementation review で `OfficialPoliticalEventCandidate.event_type` が approved taxonomy を検証していないことを Important として確認。
+- `services/normalize/contracts.py` に family 別 event type validation を追加し、typo、scope 外 event、cross-family event type を拒否する test を追加。
+- `official-political-events-ingest-execution-handoff.md` と `index.md` を Remote Gate 後の execution envelope revision 2 / draft PR #2 状態に更新。
+- verification は `UV_CACHE_DIR=/private/tmp/uv-cache uv run pytest -q` 80 passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .` passed、`UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .` passed、`git diff --check` passed。
+
+## [2026-07-08] note | Normalize contract naming follow-up
+
+- `services/normalize/contracts.py` の `contracts` という名前は意味が広く、model / schema / output contract のどれを指すのかが読み取りにくいという課題を記録。
+- 現時点では実装変更せず、後続で `normalize` 配下を分割する場合に、`models`、`schemas`、`output_contracts`、`official_event_contracts` などの命名と責務境界を検討する。
+- 目的は、normalize が生成する Evidence / OfficialPoliticalEventCandidate の型保証を維持しつつ、具体的に何に使うファイルかを読み手に伝わりやすくすること。

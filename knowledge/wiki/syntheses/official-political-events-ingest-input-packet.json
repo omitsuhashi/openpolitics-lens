@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "repo_root": "/Users/omitsuhashi/.codex/worktrees/6113/openpolitics-lens",
+  "epic_id": "opl-official-political-events-20260707",
+  "artifact_root": "knowledge/wiki/syntheses",
+  "spec": {
+    "path": "knowledge/wiki/syntheses/official-political-events-ingest-spec.md",
+    "approved_revision": 1,
+    "approved_hash": "sha256:103c804a651997e785325d73f6c6eb57ba86ef2dead3b9120c91af6f9b318d92"
+  },
+  "work_items": [
+    {
+      "id": "G2PR-008",
+      "title": "Source Registry と Coverage Ledger の contract を作る",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/official-political-events-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "SourceRegistryRecord と SourceCoverageRecord 相当の型を追加する",
+        "officiality_level を official_primary, official_notice, official_aggregator, official_archive, non_official_reference で表現する",
+        "coverage_status を supported, source_identified, manual_review_required, source_missing, blocked_by_terms, retired で表現する",
+        "jurisdiction_id, jurisdiction_level, source_system, source_family, connector_id, entrypoint_url, retrieval_method, coverage_scope, last_verified_at, terms_note を必須 contract にする",
+        "fixture JSON / JSONL で registry と coverage ledger を serialize / deserialize できる",
+        "選挙・会議 source family が coverage record なしで complete 扱いにならない",
+        "official_primary と non_official_reference を混同できない validation がある",
+        "blocked_by_terms の source は connector 実行対象から外れる"
+      ],
+      "non_goals": [
+        "OfficialPoliticalEventCandidate と EventSourceAssertion は G2PR-009 で扱う",
+        "coverage summary と欠落可視化 guard は G2PR-010 で扱う",
+        "国会 API、e-Gov、官報、東京都選管、東京都議会 connector は後続 issue で扱う",
+        "live source 取得、browser automation、PDF download、OCR は行わない",
+        "GitHub Issue mirror、push、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/tests"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "G2PR-009",
+      "title": "OfficialPoliticalEventCandidate と EventSourceAssertion の normalize contract を作る",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/official-political-events-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "OfficialPoliticalEventCandidate 相当の normalize contract を追加する",
+        "EventSourceAssertion 相当の根拠単位を追加する",
+        "event_family, event_type, event_status, date_precision, timezone, scheduled_date, source_document_id, evidence_item_id, confidence, review_state, limitations を表現する",
+        "date_mismatch, title_mismatch, status_mismatch を conflict として保持する",
+        "event 同一性を上書き merge せず、source assertion を追加する形にする",
+        "同じ event に複数 source assertion を付けられる",
+        "日付差異を silent overwrite しない",
+        "EvidenceItem なしの UI/API event 候補を作れない",
+        "個人別賛否が source にない場合、VotePosition を生成しない既存方針を崩さない"
+      ],
+      "non_goals": [
+        "source registry / coverage ledger の基礎 contract は G2PR-008 の成果を使う",
+        "coverage summary と欠落可視化 guard は G2PR-010 で扱う",
+        "国会 API、e-Gov、官報、東京都選管、東京都議会 connector は後続 issue で扱う",
+        "live source 取得、browser automation、PDF download、OCR は行わない",
+        "GitHub Issue mirror、push、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/normalize",
+        "path:services/tests",
+        "path:packages/db/migrations"
+      ],
+      "dependencies": [
+        {
+          "issue": "G2PR-008",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        }
+      ]
+    },
+    {
+      "id": "G2PR-010",
+      "title": "選挙・会議の coverage guard と欠落可視化を実装する",
+      "source": {
+        "type": "local",
+        "path": "knowledge/wiki/syntheses/official-political-events-ingest-issues.md"
+      },
+      "acceptance_criteria": [
+        "election / meeting source family に coverage record 必須 guard を追加する",
+        "source_missing, source_identified, manual_review_required, supported, blocked_by_terms を集計できる coverage summary helper を追加する",
+        "parser failure、fetch failure、date conflict を coverage / assertion conflict として残す helper を追加する",
+        "fixture で未取得だが把握済み、公式 source 未特定、取得失敗を再現する",
+        "coverage record がない jurisdiction / source family は complete 表示にならない",
+        "event が 0 件でも event が存在しないと断定しない",
+        "取得失敗や parser failure が silent drop されない",
+        "coverage summary が UI/API 実装前でも unit test で検証できる"
+      ],
+      "non_goals": [
+        "source registry / coverage ledger の基礎 contract は G2PR-008 の成果を使う",
+        "OfficialPoliticalEventCandidate と EventSourceAssertion の contract は G2PR-009 の成果を使う",
+        "国会 API、e-Gov、官報、東京都選管、東京都議会 connector は後続 issue で扱う",
+        "Web UI / API 表示は行わない",
+        "live source 取得、browser automation、PDF download、OCR は行わない",
+        "GitHub Issue mirror、push、PR 作成は行わない"
+      ],
+      "verification": [
+        "cd services && uv run pytest -q",
+        "cd services && uv run ruff check .",
+        "cd services && uv run ruff format --check .",
+        "git diff --check"
+      ],
+      "write_scope": [
+        "path:services/ingest",
+        "path:services/normalize",
+        "path:services/tests"
+      ],
+      "dependencies": [
+        {
+          "issue": "G2PR-009",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "branch_from_blocker_head"
+        },
+        {
+          "issue": "G2PR-008",
+          "strength": "hard",
+          "release_on": "review_approved",
+          "base_effect": "none"
+        }
+      ]
+    }
+  ],
+  "delivery_intent": "local_only"
+}
