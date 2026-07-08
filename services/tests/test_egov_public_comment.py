@@ -10,6 +10,10 @@ RSS_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "egov_public_comment_fee
 CASE_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "egov_public_comment_case_495000123.json"
 DISCOVERED_AT = datetime(2026, 7, 8, 10, 0, tzinfo=UTC)
 FETCHED_AT = datetime(2026, 7, 8, 10, 5, tzinfo=UTC)
+DETAIL_API_URL = (
+    "https://public-comment.e-gov.go.jp/api/servlet/Public"
+    "?CLASSNAME=PCM1040&id=495000123&detail_format=json"
+)
 
 
 def test_egov_public_comment_discovers_fixture_candidates_from_rss(tmp_path: Path) -> None:
@@ -49,7 +53,10 @@ def test_egov_public_comment_fetch_uses_json_detail_and_keeps_case_metadata(tmp_
     )
     fetcher = FakeEgovPublicCommentFetcher(
         {
-            discovery_records[0].canonical_url: CASE_FIXTURE_PATH.read_bytes(),
+            discovery_records[0].canonical_url: ingest.FakeEgovPublicCommentResponse(
+                content=CASE_FIXTURE_PATH.read_bytes(),
+                source_url=DETAIL_API_URL,
+            ),
         }
     )
     writer = ingest.FileSystemOutputWriter(tmp_path)
@@ -64,8 +71,9 @@ def test_egov_public_comment_fetch_uses_json_detail_and_keeps_case_metadata(tmp_
 
     payload = records[0].to_json_dict()
     assert payload["media_type"] == "application/json; charset=utf-8"
+    assert payload["canonical_url"] == DETAIL_API_URL
     assert payload["source_document_candidate"] == {
-        "canonical_url": discovery_records[0].canonical_url,
+        "canonical_url": DETAIL_API_URL,
         "title": "行政手続デジタル化に関する意見募集",
         "source_type": "public_comment_case",
         "jurisdiction_id": "jp",
@@ -76,6 +84,8 @@ def test_egov_public_comment_fetch_uses_json_detail_and_keeps_case_metadata(tmp_
         "metadata": {
             "case_id": "495000123",
             "operator_name": "デジタル庁",
+            "public_page_url": discovery_records[0].canonical_url,
+            "detail_api_url": DETAIL_API_URL,
             "comment_start_date": "2026-07-01",
             "comment_end_text": "2026年8月",
             "result_url": "https://public-comment.e-gov.go.jp/servlet/Public?CLASSNAME=PCM1040&id=495000123&Mode=1",
@@ -96,7 +106,12 @@ def test_normalize_public_comment_case_emits_open_close_and_result_events(
     record = connector.fetch_candidates(
         (discovery_record,),
         fetcher=FakeEgovPublicCommentFetcher(
-            {discovery_record.canonical_url: CASE_FIXTURE_PATH.read_bytes()}
+            {
+                discovery_record.canonical_url: ingest.FakeEgovPublicCommentResponse(
+                    content=CASE_FIXTURE_PATH.read_bytes(),
+                    source_url=DETAIL_API_URL,
+                )
+            }
         ),
         output_writer=ingest.FileSystemOutputWriter(tmp_path),
         run_id="run-20260708-normalize",
@@ -115,6 +130,7 @@ def test_normalize_public_comment_case_emits_open_close_and_result_events(
     )
 
     assert result.source_document.source_type == "public_comment_case"
+    assert result.source_document.canonical_url == DETAIL_API_URL
     assert len(result.official_event_candidates) == 3
     assert [candidate.event_type for candidate in result.official_event_candidates] == [
         "public_comment_opened",
@@ -126,8 +142,11 @@ def test_normalize_public_comment_case_emits_open_close_and_result_events(
     assert opened.scheduled_date.isoformat() == "2026-07-01"
     assert opened.date_precision == "date"
     assert opened.office_or_body == "デジタル庁"
+    assert opened.canonical_url == DETAIL_API_URL
     assert closed.scheduled_date.isoformat() == "2026-08-01"
     assert closed.date_precision == "month"
     assert "comment_end_date_is_month_precision" in closed.limitations
+    assert closed.canonical_url == DETAIL_API_URL
     assert result_published.scheduled_date.isoformat() == "2026-09-15"
     assert result_published.event_status == "published"
+    assert result_published.canonical_url == DETAIL_API_URL

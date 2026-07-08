@@ -18,6 +18,7 @@ from ingest.filesystem import FileSystemOutputWriter
 @dataclass(frozen=True, slots=True)
 class FakeEgovPublicCommentResponse:
     content: bytes
+    source_url: str | None = None
     media_type: str = "application/json; charset=utf-8"
     http_status: int = 200
 
@@ -145,6 +146,7 @@ class EgovPublicCommentConnector:
         records: list[FetchManifestRecord] = []
         for candidate in candidates:
             response = fetcher.fetch(candidate.canonical_url)
+            fetched_source_url = response.source_url or candidate.canonical_url
             payload = _parse_detail_payload(response.content)
             raw_artifact = output_writer.write_raw_artifact(
                 content=response.content,
@@ -156,6 +158,8 @@ class EgovPublicCommentConnector:
             metadata = {
                 "case_id": _required_payload_str(payload, "caseId"),
                 "operator_name": _required_payload_str(payload, "ministry"),
+                "public_page_url": candidate.canonical_url,
+                "detail_api_url": fetched_source_url,
                 "comment_start_date": _required_payload_str(payload, "commentStartDate"),
                 "comment_end_text": _collapse_whitespace(
                     str(payload.get("commentEndText") or payload.get("commentEndDate") or "")
@@ -170,7 +174,7 @@ class EgovPublicCommentConnector:
             else:
                 warnings.append("comment_end_date_is_month_precision")
             source_document_candidate = SourceDocumentCandidate(
-                canonical_url=candidate.canonical_url,
+                canonical_url=fetched_source_url,
                 title=_required_payload_str(payload, "title"),
                 source_type="public_comment_case",
                 jurisdiction_id=self.definition.jurisdiction.jurisdiction_id,
@@ -183,7 +187,7 @@ class EgovPublicCommentConnector:
             )
             record = FetchManifestRecord(
                 connector=self.definition,
-                canonical_url=candidate.canonical_url,
+                canonical_url=fetched_source_url,
                 fetched_at=fetched_at,
                 http_status=response.http_status,
                 content_hash=raw_artifact.content_hash,
